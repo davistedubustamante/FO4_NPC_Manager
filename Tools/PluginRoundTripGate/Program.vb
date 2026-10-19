@@ -517,10 +517,15 @@ Module Program
                 Check(Not File.Exists(outside), "controlled FaceGen cannot create an escaped output")
                 Reject(Sub() FaceGenOutputAdapter.WriteBytes(Path.Combine(stage, "Data", "over.dds"), New Byte(8191) {}), "actual FaceGen byte adapter enforces quota before payload")
                 Check(Not File.Exists(Path.Combine(stage, "Data", "over.dds")), "quota failure produces no oversized FaceGen file")
+                Check(Not FaceGenOutputAdapter.MayRemoveStale(Path.Combine(stage, "Data", "face.dds")), "controlled stale cleanup retains charged outputs")
+                Check(Not FaceGenOutputAdapter.DiagnosticDiskWritesAllowed, "controlled morph diagnostics cannot open external dump files")
+                Check(File.Exists(Path.Combine(stage, "Data", "face.dds")), "cleanup admission retains original charged DDS")
+                Reject(Sub() FaceGenOutputAdapter.MayRemoveStale(outside), "controlled cleanup rejects paths outside quota root")
                 Reject(Sub() FaceGenOutputAdapter.RejectUncontrolledDiagnostic(), "TGA diagnostic path fails closed in controlled output")
                 Reject(Sub() FaceGenOutputAdapter.BeginControlledOutput(budget), "concurrent FaceGen resource scopes rejected")
             End Using
             Reject(Sub() FaceGenOutputAdapter.WriteBytes(outside, dds), "closed controlled FaceGen scope never falls back to unbudgeted writer")
+            Reject(Sub() FaceGenOutputAdapter.MayRemoveStale(Path.Combine(stage, "Data", "face.dds")), "closed controlled cleanup cannot fall back to direct deletion")
         End Using
 
     End Sub

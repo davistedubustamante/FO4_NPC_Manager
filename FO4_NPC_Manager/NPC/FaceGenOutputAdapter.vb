@@ -67,6 +67,22 @@ Namespace ExperimentalTransformation
                 End If
             End SyncLock
         End Sub
+        ' Controlled attempts retain all charged files. Never delete stale output to reclaim quota.
+        Public Function MayRemoveStale(destination As String) As Boolean
+            SyncLock outputGate
+                If Not controlledMode Then Return True
+                If active Is Nothing Then Throw New InvalidOperationException("Controlled output scope is closed.")
+                RelativeDestination(active, destination)
+                Return False
+            End SyncLock
+        End Function
+        Public ReadOnly Property DiagnosticDiskWritesAllowed As Boolean
+            Get
+                SyncLock outputGate
+                    Return Not controlledMode AndAlso Not ControlledFileOutput.IsActive
+                End SyncLock
+            End Get
+        End Property
         Public Sub RejectUncontrolledDiagnostic()
             SyncLock outputGate
                 If controlledMode Then Throw New InvalidOperationException("TGA/debug file writer is not admitted to controlled FaceGen output.")

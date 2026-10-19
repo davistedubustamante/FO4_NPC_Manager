@@ -769,7 +769,7 @@ Friend NotInheritable Class NpcMorphPoseResolver
             ' Dump the raw JSON to a sibling file so we can see exactly what the engine reads
             ' (independent of our parser). Compares against externally-sourced hex IDs to
             ' catch any parser bug. Path: same directory as the log file, named per gender.
-            If Logger.Enabled Then
+            If Logger.Enabled AndAlso ExperimentalTransformation.FaceGenOutputAdapter.DiagnosticDiskWritesAllowed Then
                 Try
                     Dim dumpPath = IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"fbr_dump_{race.EditorID}_{genderKey}.txt")
                     IO.File.WriteAllBytes(dumpPath, bytes)

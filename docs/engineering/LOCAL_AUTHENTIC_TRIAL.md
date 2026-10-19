@@ -123,3 +123,31 @@ produced NIF/DDS and resource reference, verify female body/equipment and preser
 faction/package/narrative evidence. Then run isolated in-game tests using test saves and explicit
 user authorization for any installation/activation. Missing resources or runtime evidence remain
 blocked; no placeholder resource can satisfy authentic conversion acceptance.
+
+## Quota-controlled record trial (not full FaceGen conversion)
+
+The new `--controlled-record` command accepts the existing **NpcBatchProfile**, not the campaign
+or AuthenticTrialInput document. Prepare exactly one reviewed adult human target using the
+existing prepared-page profile; set `RequireFaceGen` to `false`. Preserve its frozen load order,
+preset hashes, localization selection and protected input roots. Never remove an admission
+failure to force a record through. Use a fresh output directory outside every source root:
+
+```powershell
+& $cli --controlled-record 'D:\FO4GlobalTrial\one-npc.private.json' 'D:\FO4GlobalTrial\record-attempt-01' 67108864
+if ($LASTEXITCODE -ne 0) { throw 'Trial blocked; retain its journal for diagnosis' }
+& $cli --controlled-record 'D:\FO4GlobalTrial\one-npc.private.json' 'D:\FO4GlobalTrial\record-attempt-01' 67108864 --resume
+if ($LASTEXITCODE -ne 0) { throw 'Recovery failed; do not install output' }
+```
+
+The numeric ceiling includes payload files and the reservation ledger as logical bytes, not NTFS
+allocation overhead. The original ESP serializer emits through a bounded sink; shards, consolidated
+ESP, report/checkpoint snapshots and copied resources share the same ledger. Failed/partial writes
+retain their reservation. Existing files cannot be overwritten or reclaimed to bypass the ceiling.
+Do not manually repair/delete a ledger or retry in the same workspace without `--resume`.
+
+`RequireFaceGen=true` is rejected before workspace creation in this command. The legacy positional
+CLI path does **not** provide this aggregate quota and must not be used to bypass that restriction.
+Neither command installs anything. A successful controlled record trial is only ESP/preset evidence:
+it does not establish generated NIF/DDS, body/equipment fit, dialogue or in-game correctness.
+The complete authentic conversion remains blocked until the native/cache/auxiliary write audit and
+full-generation validation are complete. Keep real-resource reports local.

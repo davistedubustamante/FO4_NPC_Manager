@@ -221,3 +221,18 @@ Preserved e56a6db/3df9782. Added deterministic source overlay on unchanged Base 
 Shared controlled output routes NPC ESP/report, BatchJournal snapshots, aggregate ESP/report and resource copies through the existing exact-reservation stream gateway. Renaming a shard becomes a charged new copy with the original retained. Checkpoints/recovery require durable quota completion. Added one-target record diagnostic worker/CLI with exclusive quota journal; global and native FaceGen workers stay blocked. Caches/temp/package paths cannot be entered from this admitted controlled worker. Full native/physical-storage coverage remains false.
 
 Local132 portable assertions passed (baseline31+journal21+campaign28+quota37+controlled writers15), /tmp/controlled-esp-portable.json. Pinned build exit0, zero warnings/errors. Local compiler found a globally visible helper named Relative colliding with a VB loop variable; renamed ToBudgetRelativePath. Syntax helper caught reserved Resume parameter and Partial fixture variable; renamed before Windows validation. No assertion suppressed. Original writer + adapters/CLI/gate syntax parsed successfully; actual Windows binding/runtime pending.
+
+### R13 controlled original ESP integration — add796b
+
+Windows39343409625 compiled GUI, original native DirectXTex/FaceTint and passed186 mandatory
+binary/controlled checks, including the original ESP serializer, complete controlled-record file
+ledger coverage, reopen/consolidation, exhaustion and resume. Full workflow failed at CLI
+compilation: BC30616, new block-local `profile` and `result` hide later function-scope variables.
+Renamed only those CLI locals to controlledProfile/controlledResult for diagnosis-driven retry1.
+No assertion removed, no pin/license/build configuration weakened. Portable build exit0,132
+assertions (31 baseline+21 journal+28 campaign+37 quota+15 controlled-output). Records gate exit0.
+
+Independent audit closes FaceGen stale-deletion admission and morph debug-dump paths, with five
+new Windows negative/retention checks. Native/cache/package scope remains blocked; audit map is
+NATIVE_WRITE_AUDIT.md, machine-readable scope storage-writers.json. LOCAL_AUTHENTIC_TRIAL.md
+now documents the quota-controlled record-only command. No real assets or full FaceGen proof.

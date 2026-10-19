@@ -2974,7 +2974,7 @@ Public Module FaceGenBuilder
                 Dim full = IO.Path.Combine(dataPath, rel)
                 If escritas IsNot Nothing AndAlso escritas.Contains(full) Then Continue For
                 Try
-                    If IO.File.Exists(full) Then
+                    If ExperimentalTransformation.FaceGenOutputAdapter.MayRemoveStale(full) AndAlso IO.File.Exists(full) Then
                         IO.File.Delete(full)
                         Logger.LogLazy(Function() $"[FACEBAKE][SSE] stale del camino PLEGADO borrado (este bake NO pliega): {rel}")
                     End If
@@ -3016,7 +3016,7 @@ Public Module FaceGenBuilder
                 ' se acaba de hornear.
                 If escritas IsNot Nothing AndAlso escritas.Contains(full) Then Continue For
                 Try
-                    If IO.File.Exists(full) Then
+                    If ExperimentalTransformation.FaceGenOutputAdapter.MayRemoveStale(full) AndAlso IO.File.Exists(full) Then
                         IO.File.Delete(full)
                         Logger.LogLazy(Function() $"[FACEBAKE] stale de un bake anterior borrado (este bake no lo reescribió): {rel}")
                     End If

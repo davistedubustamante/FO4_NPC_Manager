@@ -62,3 +62,8 @@ Next highest-priority code step is R13: adapt the original ESP output interface 
 ## New R13 implementation iteration
 
 Preserve e56a6db/3df9782. Integrate original ESP writer through a SHA-verified additive stream interface overlay on the unchanged source pin; no second serializer. Route shard/report/journal/aggregate/resource-copy output through the existing pre-write gateway. Test a single controlled record/appearance trial, recovery, quota exhaustion and rollback. Native FaceGen/cache/temp/package routes stay blocked until audited/adapted; no global worker enabled. New changed-code Windows validation bounded to initial+three diagnosed retries per failing step; previous session's four runs are historical.
+
+add796b /39343409625 passed186 Windows fixture checks and GUI/native builds; CLI failed BC30616
+because new nested locals hide existing outer locals. Retry1 renames the two locals and adds
+five independent stale-cleanup/morph-diagnostic admission checks.132 portable assertions passed.
+Full workflow success is pending; no mass or complete FaceGen worker enabled.

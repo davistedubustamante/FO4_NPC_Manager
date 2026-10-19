@@ -50,30 +50,30 @@
     {
       "id": "original-esp-writer",
       "source": "dependency:FO4_Base_Library/ESP/SaveNpcEspWriter.vb",
-      "enforcement": "NOT INTEGRATED: original path-based EscrituraEnElLugar.GuardarConCopia",
-      "evidence": "existing binary export/reopen, not quota proof",
-      "remaining": "stream/output-sink interface covering backup/journal/temp behavior before any controlled ESP execution"
+      "enforcement": "Pinned original serializer accepts an additive optional stream sink; controlled trial uses bounded memory then exact pre-write gateway reservation; legacy backups/journals bypassed only in controlled scope",
+      "evidence": "Windows validation add796b pending; verified source overlay SHA recorded in provenance",
+      "remaining": "Windows full pipeline validation; all other original path-based entry points remain outside this admission"
     },
     {
       "id": "batch-checkpoints",
       "source": "FO4_NPC_Manager/NPC/BatchJournal.vb",
-      "enforcement": "NOT INTEGRATED: original batch snapshots use own FileStream",
-      "evidence": "existing journal recovery tests, not aggregate write quota",
-      "remaining": "route snapshots, progress, reports and all staging writes through gateway"
+      "enforcement": "ControlledFileOutput routes snapshots/reports through bounded serialization and gateway; durable completion required for recovery",
+      "evidence": "132 portable assertions overall, including 15 controlled-writer assertions",
+      "remaining": "Windows combined exhaustion/resume validation pending"
     },
     {
       "id": "aggregate-esp-resources",
       "source": "FO4_NPC_Manager/NPC/AggregateNpcPatch.vb",
-      "enforcement": "NOT INTEGRATED: original ESP writer, File.Copy and report streams",
-      "evidence": "existing conflict/tamper/round-trip fixtures, not quota proof",
-      "remaining": "reserve aggregate outputs and copied resources before writing"
+      "enforcement": "Original ESP stream sink plus exact-length hashed resource copies and controlled reports; retained shard copies remain charged",
+      "evidence": "Windows add796b pending",
+      "remaining": "Combined Windows proof pending; native FaceGen worker still rejected"
     },
     {
       "id": "resource-index-cache",
       "source": "FO4_NPC_Manager/NPC/ProductionNpcBatch.vb",
-      "enforcement": "NOT INTEGRATED for execution: BakeStaged chooses path-based cache; localization scope separately disables its archive cache writes",
-      "evidence": "source call-site audit only",
-      "remaining": "disable execution disk caches or route cache/temp/package writers through bounded sink"
+      "enforcement": "Controlled worker rejects FaceGen before any resource index creation; legacy non-controlled BakeStaged still uses disk cache",
+      "evidence": "Source audit: original CacheDirectory empty disables index persistence",
+      "remaining": "Disable caches in a verified full-generation scope before allowing FaceGen; cache pruning and external writers not admitted"
     },
     {
       "id": "inventory-reports",
@@ -88,14 +88,23 @@
       "enforcement": "new workspace with 1 MiB gateway ceiling; input asset inspection is read-only",
       "evidence": "original NIF/native DDS controlled validation; no authentic conversion",
       "remaining": "actual local profile and genuine resource evidence"
+    },
+    {
+      "id": "facegen-stale-and-morph-diagnostics",
+      "source": "FO4_NPC_Manager/FaceGenBuilder.vb; NpcMorphPoseResolver.vb",
+      "enforcement": "Controlled FaceGen cleanup retains charged files; morph debug dumps disabled in controlled output; closed scope cannot delete",
+      "evidence": "New negative Windows assertions pending",
+      "remaining": "Full native call-tree and real resource generation validation"
     }
   ],
-  "nextImplementation": "Adapt original ESP output interface without a second serializer, integrate all checkpoint/aggregate/cache/temp/package/report paths, then test combined exhaustion/interruption/recovery before enabling a mass worker.",
+  "nextImplementation": "Validate controlled original ESP/checkpoint/aggregate pipeline, complete FaceGen cache/native/package audit and real generation proof before admitting a complete single-NPC or global worker.",
   "userIntervention": "No source upload needed for those code changes. Authentic asset/runtime evidence requires an authorized isolated Windows profile; no collection upload or original game/save change.",
   "sourceCommit": "e56a6db",
   "latestWindowsRun": "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39336072090",
   "windowsChecks": 176,
-  "portableAssertions": 117,
+  "portableAssertions": 132,
   "authenticResourcesVerified": false,
-  "inGameValidated": false
+  "inGameValidated": false,
+  "currentCodeUnderValidation": "add796b",
+  "pendingWindowsRun": "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39343409625"
 }
