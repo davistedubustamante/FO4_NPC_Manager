@@ -61,7 +61,7 @@ Module Program
         Dim race = GenericPluginWriter.WrapRecord("RACE", Sr("EDID", Text("AdultRaceFixture")), 0UI, &H1000801UI, 0UI, 0US, game)
         Dim voice = GenericPluginWriter.WrapRecord("VTYP", Sr("EDID", Text("QuestVoiceFixture")), 0UI, &H1000802UI, 0UI, 0US, game)
         Dim npcClass = GenericPluginWriter.WrapRecord("CLAS", Sr("EDID", Text("ClassFixture")), 0UI, &H1000803UI, 0UI, 0US, game)
-        Dim header = GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String) From {"Fallout4.esm"}, 4, &H804UI, "fixture", False)
+        Dim header = GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String) From {"Fallout4.esm"}, 8, &H804UI, "fixture", False)
         File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), header.Concat(GenericPluginWriter.BuildGrup("CLAS", New List(Of Byte()) From {npcClass})) _
             .Concat(GenericPluginWriter.BuildGrup("RACE", New List(Of Byte()) From {race})) _
             .Concat(GenericPluginWriter.BuildGrup("NPC_", New List(Of Byte()) From {npc})) _

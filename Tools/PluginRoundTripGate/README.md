@@ -1,7 +1,7 @@
 # Isolated NPC ESP integration gate — Windows only
 
 Uses FO4 NPC Manager and the exact FO4_Base_Library revision/layout in the existing Windows workflow.
-No game installation or proprietary assets required. Test inputs are generated binary fixtures.
+No game installation or proprietary assets required. The generated `inputs/Fallout4.esm` is an empty test placeholder; never install it over the real game master. Test inputs are generated binary fixtures.
 The fixture NPC includes the required FO4 scalar subrecords; companion race/class/voice records are
 minimal reference fixtures and are not a playable world or proof of in-game legality.
 

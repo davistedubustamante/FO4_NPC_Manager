@@ -167,6 +167,11 @@ jobs:
               '```text' >> $env:GITHUB_STEP_SUMMARY
               Get-Content $log -Tail 120 >> $env:GITHUB_STEP_SUMMARY
               '```' >> $env:GITHUB_STEP_SUMMARY
+              $diagnosis = (Get-Content $log | Select-String -Pattern 'error |Exception|FAIL:' | Select-Object -Last 8 | ForEach-Object { $_.ToString() }) -join "`n"
+              if ($diagnosis) {
+                $encoded = $diagnosis.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+                Write-Output "::error title=Experimental fixture gate diagnosis::$encoded"
+              }
             }
           }
 

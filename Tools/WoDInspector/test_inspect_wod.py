@@ -51,6 +51,23 @@ class InspectorTests(unittest.TestCase):
             self.run_scan()
         self.assertEqual(marker.read_text(), 'preserve')
 
+    def test_private_bindings_locate_local_resources(self):
+        self.run_scan()
+        bindings = json.loads((self.root / 'report' / 'local-roots.private.json').read_text())
+        self.assertEqual(Path(bindings['game']), self.data)
+        self.assertNotIn(str(self.data), (self.root / 'report' / 'inventory.jsonl').read_text())
+
+    @unittest.skipUnless(os.name == 'nt', 'PowerShell wrapper requires Windows')
+    def test_windows_powershell_entry_point(self):
+        wrapper = Path(__file__).with_name('Inspect-WoD.ps1')
+        result = subprocess.run(['powershell', '-NoProfile', '-File', str(wrapper),
+                                 '-GameRoot', str(self.data), '-OutputRoot', str(self.root / 'wrapped')],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        report = json.loads((self.root / 'wrapped' / 'summary.json').read_text())
+        self.assertEqual(report['filesInventoried'], 1)
+        self.assertEqual(report['status'], 'complete')
+
     def test_output_inside_source_refused(self):
         with self.assertRaises(ValueError):
             scanner.inspect({'game': self.data}, self.data / 'report')

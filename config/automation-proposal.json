@@ -10,12 +10,27 @@
   "promptFile": "docs/engineering/AUTOMATION_PROMPT.md",
   "advisoryLimits": {
     "agentMinutesPerRun": 25,
-    "windowsCiRunsPerIteration": 1,
     "maxDiagnosedAttemptsPerStep": 3,
-    "maxConcurrentTasks": 1
+    "maxConcurrentTasks": 1,
+    "windowsCiRunsPerCodeRevision": 1,
+    "maxWindowsCiAttemptsPerRequirement": 3
   },
   "hardBudgetEnforcementVerified": false,
   "activationStatus": "not-activated-no-callable-scheduler-in-session",
-  "stopConditions": ["usage allowance unavailable", "user approval boundary reached", "three diagnosed failures", "another project task running", "no independent feasible requirement"],
-  "forbidden": ["merge", "release", "original game/save changes", "installation", "paid service activation", "upload game or mod assets", "self-rescheduling"]
+  "stopConditions": [
+    "usage allowance unavailable",
+    "user approval boundary reached",
+    "three diagnosed failures",
+    "another project task running",
+    "no independent feasible requirement"
+  ],
+  "forbidden": [
+    "merge",
+    "release",
+    "original game/save changes",
+    "installation",
+    "paid service activation",
+    "upload game or mod assets",
+    "self-rescheduling"
+  ]
 }

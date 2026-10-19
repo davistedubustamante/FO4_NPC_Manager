@@ -5,9 +5,12 @@
     {
       "id": "R01",
       "requirement": "Persistent autonomous engineering and recovery",
-      "status": "in_progress",
+      "status": "verified",
       "dependsOn": [],
-      "evidence": [],
+      "evidence": [
+        "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39192367366 at 3ac23fa",
+        "python3 -B Tools/EngineeringGate/check_records.py: exit 0, 8 requirements, acyclic dependency graph"
+      ],
       "acceptance": [
         "AGENTS and resume plan persist in Git",
         "requirement IDs unique, dependency graph acyclic, verified entries have evidence",
@@ -33,9 +36,11 @@
     {
       "id": "R03",
       "requirement": "Read-only Windows WoD metadata and resource inspection",
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [],
-      "evidence": [],
+      "evidence": [
+        "18 fixture tests passed on Linux and Windows at 3ac23fa; private bindings and PowerShell wrapper test pending CI"
+      ],
       "acceptance": [
         "Windows invocation reads only explicit roots",
         "metadata and optional bounded BA2 name tables remain local",

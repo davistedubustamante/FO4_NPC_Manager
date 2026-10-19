@@ -65,3 +65,13 @@ dotnet run --configuration Release -- experimental-report.json
 
 Outputs remain experimental until real plugin, FaceGen, dialogue, quest and collection
 compatibility checks pass. No game installation is required for these synthetic checks.
+
+## Autonomous engineering and local collection inspection
+
+Start with [AGENTS.md](AGENTS.md) and the [persistent execution plan](docs/engineering/EXECUTION_PLAN.md).
+The [requirement matrix](docs/engineering/requirements.json), [evidence log](docs/engineering/EVIDENCE.md)
+and [blocker register](docs/engineering/BLOCKERS.md) distinguish synthetic, binary and in-game validation.
+
+The [offline Windows WoD inspector](Tools/WoDInspector/README.md) inventories local installations
+and BA2 member names without uploading the collection or extracting assets. The
+[recurring automation proposal](docs/engineering/AUTOMATIONS.md) remains disabled pending explicit approval.

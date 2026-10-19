@@ -3,10 +3,10 @@
 Branch: dev/npc-transformation-experimental. Baseline: d09860b. No automatic scheduler is active.
 
 ## Current iteration
-1. R01: establish instructions, requirement state, blockers, evidence and recovery. In progress.
+1. R01: establish instructions, requirement state, blockers, evidence and recovery. Verified by engineering-records CI at 3ac23fa.
 2. R02: use pinned FO4_Base_Library to read a valid generated FO4 NPC_ plugin, write a separate override ESP, reopen and verify identity, masters and preserved fields. Binary fixture evidence only; no claim of in-game conversion. In progress.
-3. R03: prepare a Windows read-only WoD inspector with metadata/resource index and isolated output, no collection upload. Pending; independent of R02.
-4. R04: investigate available Codex recurring automation, prepare disabled configuration and approval instructions. Pending; do not activate.
+3. R03: prepare a Windows read-only WoD inspector with metadata/resource index and isolated output, no collection upload. Implemented; first 18 tests pass on Linux/Windows, private binding and PowerShell entry-point coverage under validation.
+4. R04: investigate available Codex recurring automation, prepare disabled configuration and approval instructions. Prepared and disabled; no callable scheduler in session. Do not activate.
 5. Run local checks + Windows CI, diagnose up to three attempts per failing step, record exact results and commit. Continue next viable item.
 
 ## Next milestones

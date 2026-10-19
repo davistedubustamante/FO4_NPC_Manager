@@ -19,6 +19,8 @@ only bounded name tables, without reading/decompressing archive payloads. BA2 GN
 1/2/3/7/8 are recognized; other versions/types are reported as unsupported. BSA extraction/indexing,
 virtual filesystem resolution, plugin NPC analysis and winning resource resolution are not implemented.
 `summary.json` reports completeness/errors/skips and explicitly denies game compatibility validation.
+`local-roots.private.json` binds root labels to actual local Windows directories for future resource
+reading. It contains absolute private paths: keep it local and never share or commit it.
 Exit codes: 0 complete inventory, 2 partial inventory, 1 invalid invocation/output or fatal error.
 A partial result must never be treated as a full load-order or resource compatibility audit.
 

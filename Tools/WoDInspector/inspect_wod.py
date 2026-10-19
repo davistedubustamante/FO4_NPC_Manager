@@ -116,6 +116,10 @@ def inspect(roots, output, index_archives=False):
     if not sources:
         raise ValueError('At least one explicit root required')
     output.mkdir(parents=True, exist_ok=False)
+    # Local bindings let a future Windows reader locate indexed resources without copying assets.
+    # This private file must never be uploaded or included in a shared summary.
+    (output / 'local-roots.private.json').write_text(
+        json.dumps({label: str(source) for label, source in sources.items()}, indent=2), encoding='utf-8')
     errors, skipped, files, resources = [], [], 0, 0
     def error(label, relative, exc):
         errors.append({'root': label, 'path': relative, 'kind': type(exc).__name__,
