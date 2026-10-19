@@ -21,6 +21,7 @@ Namespace ExperimentalTransformation
         Implements IDisposable
         Private Shared ReadOnly contextGate As New Object
         Private priorDictionary As ConcurrentDictionary(Of String, FilesDictionary_class.File_Location)
+        Private outputEncoding As IDisposable
         Private priorRoot As String
         Private ReadOnly tableHandles As New List(Of FileStream)
         Private ReadOnly expected As New List(Of String)
@@ -37,6 +38,9 @@ Namespace ExperimentalTransformation
                 ' Even a nonlocalized operation must not observe stale resources from another profile.
                 Dim selected As New ConcurrentDictionary(Of String, FilesDictionary_class.File_Location)(StringComparer.OrdinalIgnoreCase)
                 If profile IsNot Nothing Then
+                    If PluginEncodingSettings.TryGetLocalizationPrimaryOverride() IsNot Nothing Then Throw New InvalidDataException("Unsealed global localization encoding override is unsupported.")
+                    If PluginEncodingSettings.General.CodePage <> 1252 Then Throw New InvalidDataException("Unsealed general plugin encoding override is unsupported.")
+                    scope.outputEncoding = PluginEncodingSettings.PushTranslatableOverride("utf-8")
                     If String.IsNullOrWhiteSpace(profile.Language) OrElse Not System.Text.RegularExpressions.Regex.IsMatch(profile.Language, "\A[a-z]{2,24}\z") Then Throw New ArgumentException("Explicit literal lower-case language token required.")
                     If profile.Tables Is Nothing OrElse profile.Tables.Count = 0 OrElse profile.Tables.Count > 4096 Then Throw New ArgumentException("Expected 1..4096 explicitly selected loose language tables.")
                     Dim loaded As New HashSet(Of String)(plugins, StringComparer.OrdinalIgnoreCase)
@@ -118,6 +122,7 @@ Namespace ExperimentalTransformation
                 For Each handle In tableHandles
                     handle.Dispose()
                 Next
+                If outputEncoding IsNot Nothing Then outputEncoding.Dispose()
             Finally
                 Monitor.Exit(contextGate)
             End Try

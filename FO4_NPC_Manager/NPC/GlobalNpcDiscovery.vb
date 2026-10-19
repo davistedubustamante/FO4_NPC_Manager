@@ -33,10 +33,10 @@ Namespace ExperimentalTransformation
             Next
             If input.Localization IsNot Nothing Then paths.AddRange(input.Localization.Tables.Select(Function(t) t.FilePath))
             Dim identity = Seal(input, paths)
-            Using strings = LocalizedExportScope.Open(input.Localization, input.LoadOrder)
             Dim prior = Config_App.Current.Game
             Try
                 Config_App.Current.Game = Config_App.Game_Enum.Fallout4
+                Using strings = LocalizedExportScope.Open(input.Localization, input.LoadOrder)
                 Dim pm As New PluginManager()
                 ' Existing loader and FileID allocator determine every winning override, including ESL.
                 pm.LoadAllPlugins(input.DataRoot, input.LoadOrder, sigFilter:=New HashSet(Of String)(StringComparer.Ordinal) From {
@@ -114,10 +114,10 @@ Namespace ExperimentalTransformation
                 If input.Localization Is Nothing AndAlso pm.Plugins.Any(Function(p) p.IsLocalized) Then blockers.Add("localized-load-order-export-not-integrated")
                 strings.VerifyUnchanged()
                 Return GlobalCampaign.Build(inventory, input.Policy, identity, blockers, pm.AllRecords.Count)
+                End Using
             Finally
                 Config_App.Current.Game = prior
             End Try
-            End Using
         End Function
         Public Sub PreparePage(input As CampaignInput, savedPlan As CampaignPlan, page As Integer, outputPath As String)
             Dim current = Scan(input)

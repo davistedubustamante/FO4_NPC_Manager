@@ -33,8 +33,8 @@ switch ($Task) {
     'AnalyzeNarrative' { if (!$OutputPath) { throw 'OutputPath required' }; $invokeArgs = @('--analyze-narrative',$ProfilePath,$OutputPath) }
     'StartPreparation' { if (!$PlanPath -or !$StagingDirectory) { throw 'PlanPath and new StagingDirectory required' }; $invokeArgs = @('--start-preparation',$ProfilePath,$PlanPath,$StagingDirectory,$BudgetBytes.ToString([Globalization.CultureInfo]::InvariantCulture)) }
     'NextPreparation' { if (!$PlanPath -or !$StagingDirectory) { throw 'PlanPath and StagingDirectory required' }; $invokeArgs = @('--next-preparation',$ProfilePath,$PlanPath,$StagingDirectory) }
-    'PausePreparation' { if (!$StagingDirectory) { throw 'StagingDirectory required' }; $invokeArgs = @('--pause-preparation',$StagingDirectory) }
-    'ResumePreparation' { if (!$StagingDirectory) { throw 'StagingDirectory required' }; $invokeArgs = @('--resume-preparation',$StagingDirectory) }
+    'PausePreparation' { if (!$StagingDirectory) { throw 'StagingDirectory required' }; $invokeArgs = @('--pause-preparation',$ProfilePath,$StagingDirectory) }
+    'ResumePreparation' { if (!$StagingDirectory) { throw 'StagingDirectory required' }; $invokeArgs = @('--resume-preparation',$ProfilePath,$StagingDirectory) }
 }
 # Invoke only the fingerprinted existing experimental CLI. No downloads/install/VFS configuration.
 & $CliPath @invokeArgs

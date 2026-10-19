@@ -14,6 +14,7 @@ Namespace ExperimentalTransformation
             If journal.ContainsVerifiedCheckpoint(CheckpointKey) Then
                 Return Path.GetDirectoryName(journal.VerifiedOutputPaths(CheckpointKey).Single(Function(p) Path.GetExtension(p).Equals(".esp", StringComparison.OrdinalIgnoreCase)))
             End If
+            Using strings = LocalizedExportScope.Open(profile.Localization, profile.LoadOrder)
             Dim pm As New PluginManager()
             pm.LoadAllPlugins(profile.DataRoot, profile.LoadOrder)
             Dim originals As New Dictionary(Of UInteger, PluginRecord)
@@ -39,6 +40,7 @@ Namespace ExperimentalTransformation
                 If warnings.Count <> 0 Then Throw New InvalidDataException("Aggregate canonical warnings: " & String.Join("; ", warnings))
                 entries.Add(New SaveNpcEspWriter.NpcOverrideEntry With {.Npc = npc, .SourcePluginName = target.SourcePlugin, .OriginalHeader = originals(fid).Header})
             Next
+            strings.VerifyUnchanged()
             Dim destination = Directory.CreateDirectory(Path.Combine(journal.StagingDirectory, "bundle-" & Guid.NewGuid().ToString("N"))).FullName
             Dim patch = Path.Combine(destination, "EXPERIMENTAL-NPC-Batch.esp")
             Using reservation As New FileStream(patch, FileMode.CreateNew, FileAccess.Write)
@@ -89,8 +91,10 @@ Namespace ExperimentalTransformation
             For Each target In profile.Targets
                 If Not journal.ContainsVerifiedCheckpoint(target.Key) Then Throw New InvalidDataException("Source checkpoint changed during aggregation.")
             Next
+            strings.VerifyUnchanged()
             journal.Checkpoint(CheckpointKey, outputs.Select(Function(p) Path.GetRelativePath(journal.StagingDirectory, p)))
             Return destination
+            End Using
         End Function
     End Module
 End Namespace

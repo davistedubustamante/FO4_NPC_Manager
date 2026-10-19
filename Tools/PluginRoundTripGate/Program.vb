@@ -8,23 +8,25 @@ Imports FO4_NPC_Manager.ExperimentalTransformation
 
 Module Program
     Private checks As Integer
+    Private lastCheck As String = "none"
     Private Sub Check(ok As Boolean, name As String)
         If Not ok Then Throw New InvalidDataException("FAIL: " & name)
         checks += 1
+        lastCheck = name
         Console.WriteLine("PASS: " & name)
     End Sub
-    Private Sub Reject(action As Action, name As String)
+    Private Sub Reject(action As Action, name As String, Optional expectedReason As String = Nothing)
         Dim rejected = False
         Try
             action()
         Catch ex As ArgumentException
-            rejected = True
+            rejected = expectedReason Is Nothing OrElse ex.Message.Contains(expectedReason, StringComparison.OrdinalIgnoreCase)
         Catch ex As InvalidOperationException
-            rejected = True
+            rejected = expectedReason Is Nothing OrElse ex.Message.Contains(expectedReason, StringComparison.OrdinalIgnoreCase)
         Catch ex As InvalidDataException
-            rejected = True
+            rejected = expectedReason Is Nothing OrElse ex.Message.Contains(expectedReason, StringComparison.OrdinalIgnoreCase)
         Catch ex As IOException
-            rejected = True
+            rejected = expectedReason Is Nothing OrElse ex.Message.Contains(expectedReason, StringComparison.OrdinalIgnoreCase)
         End Try
         Check(rejected, name)
     End Sub
@@ -128,15 +130,19 @@ Module Program
         Next
         File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), allBytes.ToArray())
         Dim tables = Directory.CreateDirectory(Path.Combine(root, "selected-tables")).FullName
-        Dim spanish = StringTable(Path.Combine(tables, "Fixture_spanish.strings"), "Adulta de prueba")
+        Dim spanish = StringTable(Path.Combine(tables, "Fixture_spanish.strings"), "Adulta de prueba Ángela")
         Dim english = StringTable(Path.Combine(tables, "Fixture_english.strings"), "Wrong fallback language")
         Dim localization As New LocalizationProfile With {.Language = "spanish", .Tables = New List(Of LocalizationTable) From {spanish}}
         Dim beforeDictionary = FilesDictionary_class.Dictionary
         Dim beforeRoot = FilesDictionary_class.FO4Path
-        Dim patch = WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-positive"), AgeEvidence.Adult, "controlled adult", localization)
+        Dim patch As String
+        Using foreignEncoding = PluginEncodingSettings.PushTranslatableOverride("1251")
+            patch = WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-positive"), AgeEvidence.Adult, "controlled adult", localization)
+            Check(PluginEncodingSettings.Translatable.CodePage = 1251, "localized UTF8 output scope restores caller encoding")
+        End Using
         Dim reopened As New PluginReader() : reopened.Load(patch)
         Dim written = reopened.Records.Values.Single()
-        Check(Not reopened.IsLocalized AndAlso Encoding.UTF8.GetString(written.GetSubrecord("FULL").Value.Data).TrimEnd(ChrW(0)) = "Adulta de prueba", "localized source emits explicitly selected text and reopens as self-contained inline ESP")
+        Check(Not reopened.IsLocalized AndAlso Encoding.UTF8.GetString(written.GetSubrecord("FULL").Value.Data).TrimEnd(ChrW(0)) = "Adulta de prueba Ángela", "localized source emits explicitly selected text and reopens as self-contained inline ESP")
         Check(ReferenceEquals(beforeDictionary, FilesDictionary_class.Dictionary) AndAlso beforeRoot = FilesDictionary_class.FO4Path, "localized context restores original process resources")
         Check(written.GetSubrecord("VMAD").Value.Data.SequenceEqual(New Byte() {6, 0, 2, 0, 1, 0, 5, 0, 80, 114, 111, 98, 101, 0, 0, 0}), "localized round-trip preserves nonempty script attachment")
         Dim localizedPm As New PluginManager() : localizedPm.LoadAllPlugins(data, order)
@@ -177,7 +183,7 @@ Module Program
         Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-missing-id"), AgeEvidence.Adult, "controlled adult", localization), "absent localized ID fails before ESP creation")
         Check(Not Directory.Exists(Path.Combine(root, "localized-missing-id")), "unresolved strings produce no output directory")
         Check(GlobalNpcDiscovery.Scan(campaign).Decisions.Single().Npc.ErrorDetail.Contains("Localized NPC"), "global inventory blocks NPC with unresolved string instead of silently scheduling")
-        spanish = StringTable(spanish.FilePath, "Adulta de prueba") : localization.Tables(0) = spanish
+        spanish = StringTable(spanish.FilePath, "Adulta de prueba Ángela") : localization.Tables(0) = spanish
         localization.Language = "english"
         Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-wrong-language"), AgeEvidence.Adult, "controlled adult", localization), "language mismatch cannot fall back to other installed table")
         localization.Language = "spanish"
@@ -197,7 +203,7 @@ Module Program
         File.WriteAllBytes(spanish.FilePath, New Byte() {1, 2, 3})
         spanish.Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(spanish.FilePath)))
         Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-corrupt"), AgeEvidence.Adult, "controlled adult", localization), "malformed localized table is not silently emitted empty")
-        StringTable(spanish.FilePath, "Adulta de prueba")
+        StringTable(spanish.FilePath, "Adulta de prueba Ángela")
         File.WriteAllText(Path.ChangeExtension(spanish.FilePath, ".cpoverride"), "1252")
         Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-encoding"), AgeEvidence.Adult, "controlled adult", localization), "unsealed encoding override cannot change reproducible localized output")
         Check(ReferenceEquals(beforeDictionary, FilesDictionary_class.Dictionary), "failed localization restores original resource context")
@@ -234,13 +240,15 @@ Module Program
                     If part.Signature = "ACBS" Then Array.Copy(BitConverter.GetBytes(1US), 0, bytes, 14, 2)
                     If part.Signature = "VMAD" Then bytes = script
                     If part.Signature = "RNAM" OrElse part.Signature = "VTCK" Then bytes = BitConverter.GetBytes(0UI)
+                    If part.Signature = "VTCK" Then parts.AddRange(Sr("SNAM", BitConverter.GetBytes(&H1000805UI).Concat(New Byte() {0}).ToArray()))
                     parts.AddRange(Sr(part.Signature, bytes))
+                    If part.Signature = "VTCK" Then parts.AddRange(Sr("TPLT", BitConverter.GetBytes(&H1000800UI)))
+                    If part.Signature = "RNAM" Then
+                        parts.AddRange(Sr("COCT", BitConverter.GetBytes(1UI)))
+                        parts.AddRange(Sr("CNTO", BitConverter.GetBytes(&H1000806UI).Concat(BitConverter.GetBytes(1UI)).ToArray()))
+                    End If
+                    If part.Signature = "AIDT" Then parts.AddRange(Sr("PKID", BitConverter.GetBytes(&H1000807UI)))
                 Next
-                parts.AddRange(Sr("TPLT", BitConverter.GetBytes(&H1000800UI)))
-                parts.AddRange(Sr("SNAM", BitConverter.GetBytes(&H1000805UI).Concat(New Byte(3) {}).ToArray()))
-                parts.AddRange(Sr("COCT", BitConverter.GetBytes(1UI)))
-                parts.AddRange(Sr("CNTO", BitConverter.GetBytes(&H1000806UI).Concat(BitConverter.GetBytes(1UI)).ToArray()))
-                parts.AddRange(Sr("PKID", BitConverter.GetBytes(&H1000807UI)))
                 Return parts.ToArray()
             End Function)
         Dim fixturePath = Path.Combine(data, "Fixture.esm")
@@ -278,18 +286,18 @@ Module Program
                         Dim bytes = part.Data.ToArray()
                         If part.Signature = "ACBS" Then Array.Copy(BitConverter.GetBytes(1US), 0, bytes, 14, 2)
                         parts.AddRange(Sr(part.Signature, bytes))
+                        If part.Signature = "VTCK" Then parts.AddRange(Sr("TPLT", BitConverter.GetBytes(&H1000804UI)))
                     Next
-                    parts.AddRange(Sr("TPLT", BitConverter.GetBytes(&H1000804UI)))
                 End If
                 Return parts.ToArray()
             End Function)
-        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-cycle"), AgeEvidence.Adult, "controlled adult"), "original chain cycle detection prevents autonomous template export")
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-cycle"), AgeEvidence.Adult, "controlled adult"), "original chain cycle detection prevents autonomous template export", "cyclic")
         File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), inputBytes)
         RewriteFixture(data, Function(record) If(record.Header.FormID = &H1000804UI, record.Subrecords.SelectMany(Function(part) Sr(part.Signature, If(part.Signature = "TPLT", BitConverter.GetBytes(&H1000FFFUI), part.Data))).ToArray(), RecordBytes(record)))
-        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-incomplete"), AgeEvidence.Adult, "controlled adult"), "dead Traits pointer cannot use editor fallback")
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-incomplete"), AgeEvidence.Adult, "controlled adult"), "dead Traits pointer cannot use editor fallback", "Incomplete Traits")
         File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), inputBytes)
         RewriteFixture(data, Function(record) If(record.Header.FormID = &H1000804UI, RecordBytes(record).Concat(Sr("TPLT", BitConverter.GetBytes(&H1000800UI))).ToArray(), RecordBytes(record)))
-        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-ambiguous"), AgeEvidence.Adult, "controlled adult"), "duplicate template pointer is rejected as ambiguous")
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-ambiguous"), AgeEvidence.Adult, "controlled adult"), "duplicate template pointer is rejected as ambiguous", "Ambiguous duplicate")
         Check(Not Directory.Exists(Path.Combine(root, "traits-cycle")) AndAlso Not Directory.Exists(Path.Combine(root, "traits-incomplete")), "invalid template chains write no output directories")
     End Sub
 
@@ -524,10 +532,12 @@ Module Program
             campaign.Policy.MaxRecords = 100000
             File.WriteAllText(Path.Combine(root, "campaign-profile.json"), JsonSerializer.Serialize(campaign))
             Dim preparationStage = Path.Combine(root, "controlled-preparation")
+            Reject(Sub() CampaignPreparation.SetPaused(campaign, campaignData, True), "pause cannot open preparation state inside original data root")
+            Reject(Sub() CampaignPreparation.PrepareNext(campaign, approvedPlan, campaignData), "resume cannot open preparation state inside original data root")
             CampaignPreparation.Start(campaign, approvedPlan, preparationStage, 32768)
-            CampaignPreparation.SetPaused(preparationStage, True)
+            CampaignPreparation.SetPaused(campaign, preparationStage, True)
             Check(CampaignPreparation.PrepareNext(campaign, approvedPlan, preparationStage).Status = "PAUSED-PREPARATION-ONLY", "campaign preparation pause survives process-style recovery")
-            CampaignPreparation.SetPaused(preparationStage, False)
+            CampaignPreparation.SetPaused(campaign, preparationStage, False)
             Dim firstPage = CampaignPreparation.PrepareNext(campaign, approvedPlan, preparationStage)
             Check(firstPage.PageIndex = 0 AndAlso File.Exists(firstPage.OutputPath), "sequential preparation persists quota-reserved production profile")
             Check(CampaignPreparation.PrepareNext(campaign, approvedPlan, preparationStage).Status = "ALL-PAGES-PREPARED-NOT-CONVERTED", "resumed preparation skips verified completed pages")
@@ -544,6 +554,7 @@ Module Program
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0
         Catch ex As Exception
+            Console.Error.WriteLine("LAST-CHECK: " & lastCheck)
             Console.Error.WriteLine(ex.ToString()) : Return 1
         End Try
     End Function

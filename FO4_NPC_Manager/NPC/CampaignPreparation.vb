@@ -14,6 +14,7 @@ Namespace ExperimentalTransformation
     Public Module CampaignPreparation
         Public Sub Start(input As CampaignInput, saved As CampaignPlan, directory As String, budgetBytes As Long)
             Dim current = CurrentPlan(input, saved)
+            ValidateStage(input, directory)
             Using workspace = ReservedWriteBudget.Create(directory, budgetBytes, input.ProtectedRoots.Concat({input.DataRoot}).Concat(If(input.Localization Is Nothing, Array.Empty(Of String)(), input.Localization.Tables.Select(Function(t) t.FilePath))))
                 Dim identity = JsonSerializer.SerializeToUtf8Bytes(New String() {current.InputSha256, current.PlanSha256})
                 workspace.WriteNew("campaign-identity.json", identity)
@@ -21,6 +22,7 @@ Namespace ExperimentalTransformation
         End Sub
         Public Function PrepareNext(input As CampaignInput, saved As CampaignPlan, directory As String, Optional cancellation As CancellationToken = Nothing) As PreparationResult
             cancellation.ThrowIfCancellationRequested()
+            ValidateStage(input, directory)
             Dim current = CurrentPlan(input, saved)
             Using workspace = ReservedWriteBudget.Recover(directory)
                 If Not workspace.VerifiedNames.Contains("campaign-identity.json") Then Throw New InvalidDataException("Missing or interrupted campaign identity.")
@@ -49,11 +51,20 @@ Namespace ExperimentalTransformation
                 Return result
             End Using
         End Function
-        Public Sub SetPaused(directory As String, value As Boolean)
+        Public Sub SetPaused(input As CampaignInput, directory As String, value As Boolean)
+            ValidateStage(input, directory)
             Using workspace = ReservedWriteBudget.Recover(directory)
                 If Not workspace.VerifiedNames.Contains("campaign-identity.json") Then Throw New InvalidDataException("Not a verified campaign preparation workspace.")
                 workspace.SetPaused(value)
             End Using
+        End Sub
+        Private Sub ValidateStage(input As CampaignInput, directory As String)
+            If input Is Nothing OrElse input.ProtectedRoots Is Nothing Then Throw New ArgumentException("Explicit protected profile roots required.")
+            Dim destination = Path.GetFullPath(directory)
+            For Each original In input.ProtectedRoots.Concat({input.DataRoot}).Concat(input.Policy.FemalePresets).Concat(If(input.Localization Is Nothing, Array.Empty(Of String)(), input.Localization.Tables.Select(Function(t) t.FilePath)))
+                Dim full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(original))
+                If destination.Equals(full, StringComparison.OrdinalIgnoreCase) OrElse destination.StartsWith(If(Path.EndsInDirectorySeparator(full), full, full & Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase) Then Throw New IOException("Preparation state must remain outside every original root/input.")
+            Next
         End Sub
         Private Function CurrentPlan(input As CampaignInput, saved As CampaignPlan) As CampaignPlan
             Dim current = GlobalNpcDiscovery.Scan(input)

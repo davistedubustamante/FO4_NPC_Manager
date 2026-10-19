@@ -5,8 +5,8 @@ Imports FO4_NPC_Manager.ExperimentalTransformation
 Module Program
     Function Main(args As String()) As Integer
         Try
-            If args.Length = 2 AndAlso (args(0) = "--pause-preparation" OrElse args(0) = "--resume-preparation") Then
-                CampaignPreparation.SetPaused(args(1), args(0) = "--pause-preparation")
+            If args.Length = 3 AndAlso (args(0) = "--pause-preparation" OrElse args(0) = "--resume-preparation") Then
+                CampaignPreparation.SetPaused(ReadCampaign(args(1)), args(2), args(0) = "--pause-preparation")
                 Return 0
             End If
             If (args.Length = 5 AndAlso args(0) = "--start-preparation") OrElse (args.Length = 4 AndAlso args(0) = "--next-preparation") Then
