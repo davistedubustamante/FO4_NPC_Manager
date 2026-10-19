@@ -1,5 +1,9 @@
 # Transformación adulta experimental — iteración 1
 
+Este documento conserva la evidencia de la primera iteración. Para el hito posterior de ESP binario,
+el inspector local y el estado vigente, consultar [el plan persistente](engineering/EXECUTION_PLAN.md)
+y [el registro de evidencia](engineering/EVIDENCE.md).
+
 ## Alcance comprobable
 
 El motor `FO4_NPC_Manager/NPC/AdultTransformation.vb` transforma **copias de DTO sintéticos**,

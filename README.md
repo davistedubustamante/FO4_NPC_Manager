@@ -52,8 +52,10 @@ the FaceTint CLI uses `Release|x64` for its native dependencies.
 
 ## Experimental adult NPC transformation
 
-The first transformation engine operates on small **synthetic** batches only. It does
-not write game patches or generate FaceGen. See the
+The initial transformation engine operates on small **synthetic** batches. An additional
+[Windows integration gate](Tools/PluginRoundTripGate/README.md) now reads generated NPC_ binary fixtures,
+writes an isolated record-only ESP and reopens it to verify semantic identity and preservation.
+This does not generate FaceGen or demonstrate an in-game conversion. See the
 [implementation, validation and compatibility notes](docs/experimental-adult-transformation.md).
 
 To run its assertions with .NET SDK 8.0.408, use a new output filename:

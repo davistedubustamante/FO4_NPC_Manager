@@ -1,19 +1,24 @@
 # Persistent execution plan
 
-Branch: dev/npc-transformation-experimental. Baseline: d09860b. No automatic scheduler is active.
+Branch: dev/npc-transformation-experimental. Baseline preserved: d09860b.
+Latest runtime-verified code: a0bf328. No recurring scheduler is active.
 
-## Current iteration
-1. R01: establish instructions, requirement state, blockers, evidence and recovery. Verified by engineering-records CI at 3ac23fa.
-2. R02: use pinned FO4_Base_Library to read a valid generated FO4 NPC_ plugin, write a separate override ESP, reopen and verify identity, masters and preserved fields. Binary fixture evidence only; no claim of in-game conversion. In progress.
-3. R03: prepare a Windows read-only WoD inspector with metadata/resource index and isolated output, no collection upload. Implemented; first 18 tests pass on Linux/Windows, private binding and PowerShell entry-point coverage under validation.
-4. R04: investigate available Codex recurring automation, prepare disabled configuration and approval instructions. Prepared and disabled; no callable scheduler in session. Do not activate.
-5. Run local checks + Windows CI, diagnose up to three retries (four total executions) per failing step, record exact results and commit. Continue next viable item.
+## Completed engineering iteration (fixture scope)
+- R01 verified: AGENTS, requirement DAG, blockers, evidence and resume instructions in Git; lightweight records CI passes.
+- R02 verified on generated binary fixtures: load an NPC_ with the pinned library, write an isolated record-only ESP, reopen, resolve cleaned-master indexes, compare canonical global-FormID content, preserve headers/subrecord structure and input hashes. 21 assertions passed in Windows CI.
+- R03 verified on generated fixtures: offline Windows inspector, bounded BA2 name indexes, private local root bindings, output protection and reparse handling. Windows: 20 tests passed including PowerShell; Linux: 19 passed, 1 Windows-only skipped.
+- R04 prepared and inactive: reusable prompt, proposed schedule and advisory budgets; no callable Codex scheduler in this session and no activation performed.
+- Full native/GUI Publish|x64/CLI Release|x64/integration-gate build passed at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615511 (a0bf328).
 
-## Next milestones
-Real authorized plugin/collection manifests → winning overrides and explicit adult classification → template materialization → one NPC patch verified by existing reader → FaceGen staged bundle → body/equipment → dialogue/voice and quest checks → collection regression on a separate Windows test profile. Expand batch size only after the preceding stage passes.
+## Next selected requirement: R05 — real collection adapter
+Blocked by B01/B02: needs reviewed collection URLs/versions and a local inspection of the actual Windows profile. User runs Tools/WoDInspector/Inspect-WoD.ps1 locally, reviews summary.json and selected metadata, and keeps all plugins/assets/private root bindings local. Do not upload 300 GB or request copyrighted resource bundles.
+
+When metadata is available: establish winning plugin/resource order and runtime versions; inspect representative NPC records read-only; require explicit adulthood evidence and materialize inherited categories before authoring. Extend binary-fixture coverage for actual script properties and load-order variations before admitting those inputs. Then one real NPC staged patch -> complete FaceGen NIF/DDS -> body/equipment -> voice/dialogue/quest regressions -> small batch. Every stage needs its own evidence; no original installations or saves are modified.
 
 ## Resume procedure
-Read AGENTS.md and requirements.json; inspect git status, HEAD and CI evidence. Keep user work. Fetch only as needed; no resets or automatic merges. Check actual artifacts/tests before advancing a requirement. After a failure record diagnosis and attempt count, fix the identified cause or mark the precise external prerequisite and continue independently. End each session with a pushed recoverable commit, remaining blockers and next viable requirement. Do not promise background execution without an active authorized scheduler.
+Read AGENTS.md, requirements.json, BLOCKERS.md and EVIDENCE.md. Inspect git status and actual CI before advancing state. Keep user work; no resets or automatic merges. Start from the first feasible pending requirement, not from a clean infrastructure rebuild. Use pinned reader/writer/editor functions. Run meaningful local and Windows checks; initial execution plus at most three diagnosis-driven retries (four total). Keep one active Windows run per code revision. At the cap record the diagnosis, checkpoint and switch to independent work; no unchanged retries or a fifth full build in that cycle.
 
-## Diagnosed verification boundary
-The third run exposed a real verification gap: CleanMasters removed unused Fallout4.esm and moved Fixture.esm to local master index 0. The record identity check had already passed; the old raw master-prefix check rejected the legitimate remap. The next targeted change compares both NPCs in global FormID space using the existing canonical reader/emitter, preserving header and subrecord-structure checks. This is a new verification capability, not removal of a failed assertion. Explicit one-run extension: four total executions, no fifth in this session.
+Historical failed runs are retained in EVIDENCE.md. The final fix added global-space semantic verification after observing legitimate CleanMasters remapping; it did not remove content-preservation checks.
+
+## Activation boundary
+The automation proposal is disabled and is not a supported Codex import schema. Confirm actual scheduler capability, execution location, usage allowance, concurrency and pause controls, and obtain explicit approval before activation. No background coding continues merely because this plan exists.

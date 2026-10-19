@@ -10,7 +10,7 @@ The existing `workflow_dispatch` is a manually launched CI build/test, not an au
 America/Lima, with one project task at a time and an advisory 25-minute agent allowance. These
 limits are instructions until the actual scheduling interface confirms enforceable usage caps;
 GitHub Actions has independent job timeouts and can consume account minutes. No pricing or quota
-is assumed. Three failure attempts require new diagnoses, not unchanged retries.
+is assumed. Up to three retries after the initial execution require new diagnoses, not unchanged retries (four total executions maximum).
 
 Before activation, confirm in the actual Codex automation UI/tool: repository and branch support,
 cloud versus local execution, whether a local app must remain running, credentials, persistent

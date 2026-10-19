@@ -20,11 +20,16 @@
     {
       "id": "R02",
       "requirement": "Valid FO4 NPC plugin -> isolated ESP -> existing-reader verification",
-      "status": "in_progress",
+      "status": "verified",
       "dependsOn": [
         "R01"
       ],
-      "evidence": [],
+      "evidence": [
+        "BINARY FIXTURE ONLY: existing reader -> existing writer -> existing reader, 21 gate assertions passed at a0bf328",
+        "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615511",
+        "Master cleanup verified in global FormID space; NPC/race/voice identity, headers, subrecord structure and source hashes preserved",
+        "No in-game, real collection, nonempty quest-script or FaceGen validation implied"
+      ],
       "acceptance": [
         "Generate structurally valid NPC_ fixture with required fields",
         "read via existing reader, write via existing writer into new isolated ESP",
@@ -36,10 +41,12 @@
     {
       "id": "R03",
       "requirement": "Read-only Windows WoD metadata and resource inspection",
-      "status": "in_progress",
+      "status": "verified",
       "dependsOn": [],
       "evidence": [
-        "18 fixture tests passed on Linux and Windows at 3ac23fa; private bindings and PowerShell wrapper test pending CI"
+        "Fixture scope only: Windows 20 inspector tests passed, including PowerShell entry point and junction handling; Linux 19 passed and 1 Windows-only skipped",
+        "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615511 at a0bf328",
+        "Real installation inventory remains user-local and unexecuted in cloud"
       ],
       "acceptance": [
         "Windows invocation reads only explicit roots",
