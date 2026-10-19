@@ -369,3 +369,8 @@ compositor_trace.log
 # Handoffs de diseno: describen trabajo POR HACER (estado, acuerdos, censos contra un
 # commit) y quedan obsoletos apenas el trabajo entra. No van al repo publico.
 PARCHE_BORRADORES_ESTADO.md
+
+# Local experimental inspection reports (keep private)
+**/inventory.jsonl
+**/resources.jsonl
+**/experimental-report.json

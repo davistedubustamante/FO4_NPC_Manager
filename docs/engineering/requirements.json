@@ -8,7 +8,11 @@
       "status": "in_progress",
       "dependsOn": [],
       "evidence": [],
-      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+      "acceptance": [
+        "AGENTS and resume plan persist in Git",
+        "requirement IDs unique, dependency graph acyclic, verified entries have evidence",
+        "retry limit and authorization boundaries explicit"
+      ]
     },
     {
       "id": "R02",
@@ -18,7 +22,13 @@
         "R01"
       ],
       "evidence": [],
-      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+      "acceptance": [
+        "Generate structurally valid NPC_ fixture with required fields",
+        "read via existing reader, write via existing writer into new isolated ESP",
+        "reopen and verify identity, masters, female bit only, script/voice/other subrecords unchanged",
+        "negative checks exclude unknown age, missing masters, unresolved templates and existing output",
+        "Windows build and gate pass; evidence remains binary-fixture only"
+      ]
     },
     {
       "id": "R03",
@@ -26,15 +36,29 @@
       "status": "pending",
       "dependsOn": [],
       "evidence": [],
-      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+      "acceptance": [
+        "Windows invocation reads only explicit roots",
+        "metadata and optional bounded BA2 name tables remain local",
+        "source bytes unchanged and output isolated; reparse handling tested",
+        "corrupt or unsupported inputs yield partial/failure, never complete",
+        "Linux and Windows generated-fixture tests pass"
+      ]
     },
     {
       "id": "R04",
       "requirement": "Recurring Codex automation proposal, disabled until approval",
-      "status": "pending",
+      "status": "prepared",
       "dependsOn": [],
-      "evidence": [],
-      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+      "evidence": [
+        "config/automation-proposal.json: enabled=false; no callable scheduler discovered",
+        "docs/engineering/AUTOMATIONS.md"
+      ],
+      "acceptance": [
+        "Inspect callable tools without creating a schedule",
+        "save disabled proposal and reusable prompt",
+        "state budget/concurrency capabilities requiring verification",
+        "activation requires separate explicit user approval"
+      ]
     },
     {
       "id": "R05",
@@ -45,7 +69,10 @@
         "R03"
       ],
       "evidence": [],
-      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+      "acceptance": [
+        "reviewed collection URLs/versions and local profile metadata available",
+        "winning load order and explicit adult classification verified on authorized real input"
+      ]
     },
     {
       "id": "R06",
@@ -55,7 +82,10 @@
         "R05"
       ],
       "evidence": [],
-      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+      "acceptance": [
+        "reused FaceGen pipeline produces all required NIF/DDS outputs in staging",
+        "validate geometry/textures and reject cancelled/partial bake"
+      ]
     },
     {
       "id": "R07",
@@ -65,7 +95,10 @@
         "R05"
       ],
       "evidence": [],
-      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+      "acceptance": [
+        "validate female body, morph delivery and female armor models/slots",
+        "preserve quest inventory and avoid double morph application"
+      ]
     },
     {
       "id": "R08",
@@ -77,7 +110,11 @@
         "R07"
       ],
       "evidence": [],
-      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+      "acceptance": [
+        "separate test profile and test saves",
+        "quest/scene/dialogue/voice tests on actual collection runtime",
+        "no original files or saves modified"
+      ]
     }
   ]
 }

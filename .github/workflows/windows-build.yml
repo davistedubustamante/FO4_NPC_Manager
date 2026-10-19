@@ -50,6 +50,11 @@ jobs:
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
           dotnet-version: '8.0.408'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Test offline read-only WoD inspection
+        run: python -B -m unittest discover -s Tools/WoDInspector -v
       - name: Exercise the actual transformation engine with synthetic NPCs
         working-directory: Tools/AdultTransformationGate
         run: dotnet run --project AdultTransformationGate.vbproj --configuration Release -- experimental-synthetic-report.json
@@ -146,12 +151,24 @@ jobs:
 
       - name: Build and exercise isolated NPC ESP round-trip
         run: |
-          & $env:MSBUILD 'FO4_NPC_Manager/Tools/PluginRoundTripGate/PluginRoundTripGate.vbproj' '-t:Restore;Build' '-p:Configuration=Release;Platform=x64' '-m:2' '-v:minimal' '-bl:roundtrip.binlog'
+          & $env:MSBUILD 'FO4_NPC_Manager/Tools/PluginRoundTripGate/PluginRoundTripGate.vbproj' '-t:Restore;Build' '-p:Configuration=Release;Platform=x64' '-m:2' '-v:minimal' '-bl:roundtrip.binlog' *>&1 | Tee-Object -FilePath roundtrip-build.log
           if ($LASTEXITCODE -ne 0) { throw "Round-trip gate build failed: $LASTEXITCODE" }
           $gate = Get-ChildItem 'FO4_NPC_Manager/Tools/PluginRoundTripGate/bin' -Filter 'PluginRoundTripGate.exe' -Recurse | Select-Object -First 1
           if (!$gate) { throw 'Round-trip gate executable missing' }
-          & $gate.FullName (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip')
+          & $gate.FullName (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip') *>&1 | Tee-Object -FilePath roundtrip-run.log
           if ($LASTEXITCODE -ne 0) { throw "Round-trip verification failed: $LASTEXITCODE" }
+
+      - name: Expose fixture gate diagnosis in job summary
+        if: always()
+        run: |
+          foreach ($log in @('roundtrip-build.log', 'roundtrip-run.log')) {
+            if (Test-Path $log) {
+              "### $log" >> $env:GITHUB_STEP_SUMMARY
+              '```text' >> $env:GITHUB_STEP_SUMMARY
+              Get-Content $log -Tail 120 >> $env:GITHUB_STEP_SUMMARY
+              '```' >> $env:GITHUB_STEP_SUMMARY
+            }
+          }
 
       - name: Upload experimental binary fixture evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -214,6 +231,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: windows-build-diagnostics
-          path: "*.binlog"
+          path: |
+            *.binlog
+            roundtrip-*.log
           retention-days: 7
           if-no-files-found: ignore

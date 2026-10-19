@@ -43,19 +43,28 @@ Module Program
         File.WriteAllBytes(Path.Combine(data, "Fallout4.esm"), GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String), 0, &H800UI, "fixture", False))
         Dim acbs(19) As Byte
         Array.Copy(BitConverter.GetBytes(&H80000002UI), acbs, 4)
-        Array.Copy(BitConverter.GetBytes(templates), 0, acbs, 18, 2)
+        Array.Copy(BitConverter.GetBytes(templates), 0, acbs, 14, 2)
         Dim body = Sr("EDID", Text("SyntheticAdult")) _
-            .Concat(Sr("FULL", Text("Adult fixture"))) _
+            .Concat(Sr("VMAD", New Byte() {6, 0, 2, 0, 0, 0})) _
+            .Concat(Sr("OBND", New Byte(11) {})) _
             .Concat(Sr("ACBS", acbs)) _
-            .Concat(Sr("RNAM", BitConverter.GetBytes(&H1000801UI))) _
             .Concat(Sr("VTCK", BitConverter.GetBytes(&H1000802UI))) _
-            .Concat(Sr("VMAD", New Byte() {5, 0, 2, 0, 0, 0})).ToArray()
+            .Concat(Sr("RNAM", BitConverter.GetBytes(&H1000801UI))) _
+            .Concat(Sr("AIDT", New Byte(23) {})) _
+            .Concat(Sr("CNAM", BitConverter.GetBytes(&H1000803UI))) _
+            .Concat(Sr("FULL", Text("Adult fixture"))) _
+            .Concat(Sr("DATA", Array.Empty(Of Byte)())) _
+            .Concat(Sr("NAM6", BitConverter.GetBytes(1.0F))) _
+            .Concat(Sr("NAM7", BitConverter.GetBytes(1.0F))) _
+            .Concat(Sr("NAM8", BitConverter.GetBytes(0UI))).ToArray()
         Dim npc = GenericPluginWriter.WrapRecord("NPC_", body, 0UI, &H1000800UI, 0UI, 0US, game)
         Dim race = GenericPluginWriter.WrapRecord("RACE", Sr("EDID", Text("AdultRaceFixture")), 0UI, &H1000801UI, 0UI, 0US, game)
         Dim voice = GenericPluginWriter.WrapRecord("VTYP", Sr("EDID", Text("QuestVoiceFixture")), 0UI, &H1000802UI, 0UI, 0US, game)
-        Dim header = GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String) From {"Fallout4.esm"}, 3, &H803UI, "fixture", False)
-        File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), header.Concat(GenericPluginWriter.BuildGrup("NPC_", New List(Of Byte()) From {npc})) _
+        Dim npcClass = GenericPluginWriter.WrapRecord("CLAS", Sr("EDID", Text("ClassFixture")), 0UI, &H1000803UI, 0UI, 0US, game)
+        Dim header = GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String) From {"Fallout4.esm"}, 4, &H804UI, "fixture", False)
+        File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), header.Concat(GenericPluginWriter.BuildGrup("CLAS", New List(Of Byte()) From {npcClass})) _
             .Concat(GenericPluginWriter.BuildGrup("RACE", New List(Of Byte()) From {race})) _
+            .Concat(GenericPluginWriter.BuildGrup("NPC_", New List(Of Byte()) From {npc})) _
             .Concat(GenericPluginWriter.BuildGrup("VTYP", New List(Of Byte()) From {voice})).ToArray())
     End Sub
     Function Main(args As String()) As Integer
@@ -77,7 +86,7 @@ Module Program
             Check(written.Header.FormID = &H1000800UI, "file-local FormID preserved")
             Check((BitConverter.ToUInt32(written.GetSubrecord("ACBS").Value.Data, 0) And 1UI) = 1UI, "female flag serialized")
             Check(BitConverter.ToUInt32(written.GetSubrecord("ACBS").Value.Data, 0) = &H80000003UI, "unrelated flags preserved")
-            Check(written.GetSubrecord("VMAD").Value.Data.SequenceEqual(New Byte() {5, 0, 2, 0, 0, 0}), "script bytes preserved")
+            Check(written.GetSubrecord("VMAD").Value.Data.SequenceEqual(New Byte() {6, 0, 2, 0, 0, 0}), "script bytes preserved")
             Check(BitConverter.ToUInt32(written.GetSubrecord("VTCK").Value.Data, 0) = &H1000802UI, "voice reference preserved")
             Check(sourceHash.SequenceEqual(SHA256.HashData(File.ReadAllBytes(Path.Combine(data, "Fixture.esm")))), "source bytes untouched")
             Check(File.Exists(Path.Combine(root, "patch", "verification.json")), "verification manifest emitted")
