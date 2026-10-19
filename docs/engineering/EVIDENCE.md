@@ -103,3 +103,13 @@ R10 remains in_progress: the aggregate ESP path and resume checks passed on gene
 - Reused existing loader/NPC parser/race view and batch DTOs; moved DTO declarations without changing their namespace/API. Global inventory retains original identity, winner, override chain and blockers. No replacement parser/writer.
 - Local portable gate: 20 campaign assertions on 10,000 entries plus existing 31 baseline/21 journal assertions; explicit rebuild succeeds with no warnings/errors. Original Windows gate expanded for winning overrides and storage limits; CLI discovery execution added. Windows evidence pending this revision.
 - Storage preflight: /workspace 1.3 GiB used (32 GiB volume), existing tool cache 1.2 GiB, repository 21 MiB. No new dependencies installed. New discovery only writes bounded metadata; global execution remains disabled pending hard quota control.
+
+### Global iteration Windows attempt 1 — diagnosed compile failure
+- 9a87508: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39267896851. Native/GUI/original CLI compiled. Gate compile failed at Program.vb(178,75), BC30690: SubrecordData cannot be indexed. VB lambda variable `sr` hid fixture helper function `Sr`; renamed variable to `part`. No production parser or serializer defect inferred.
+- Next validation adds automatic page preparation using a generic NPC/race created through the original canonical race writer; deleted/ESL/stale/localized admission checks; controlled resource copy/dedup/conflict/tamper tests through the existing aggregate exporter. The copy fixtures are .bin bytes, explicitly not fabricated FaceGen evidence.
+- Found actual existing localized-input export boundary; added R15 and a plan blocker. Global execution still disabled for hard-quota and asset/narrative acceptance. Policy/preset/input metadata limits tightened; no new installations or collection copies.
+
+### Global attempt 2 preflight
+- Portable project explicit rebuild: exit 0, zero warnings/errors. Rebuilt runtime gate: baseline 31 + journal 21 + global planner 21 assertions passed, including 10,000-row deterministic paging and localized-export blocking.
+- Windows source now contains 63 mandatory integration assertions, including original 40, global winning/deleted/ESL identity, actual automatic page preparation, stale/localized admission and aggregate resource-copy semantics. Syntax gate passes; Windows semantic/runtime evidence pending.
+- Global campaign policy/saved-plan CLI inputs capped at 16/64 MiB. Preset pool limited to 256 files / 64 MiB total; plugin budget maximum 8 GiB. Artifact guards reserve diagnostics space and bound portable payloads; no old artifacts removed.

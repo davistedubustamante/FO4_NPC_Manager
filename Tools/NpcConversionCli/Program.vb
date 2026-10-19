@@ -6,14 +6,15 @@ Module Program
     Function Main(args As String()) As Integer
         Try
             If args.Length = 5 AndAlso args(0) = "--prepare-page" Then
-                Dim campaign = JsonSerializer.Deserialize(Of CampaignInput)(File.ReadAllBytes(args(1)), New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True})
+                Dim campaign = ReadCampaign(args(1))
+                If New FileInfo(args(2)).Length > 64L * 1024 * 1024 Then Throw New IOException("Saved plan exceeds 64 MiB.")
                 Dim saved = JsonSerializer.Deserialize(Of CampaignPlan)(File.ReadAllBytes(args(2)))
                 GlobalNpcDiscovery.PreparePage(campaign, saved, Integer.Parse(args(3), Globalization.CultureInfo.InvariantCulture), args(4))
                 Console.WriteLine("Prepared verified input page; no patch generated or installed.")
                 Return 0
             End If
             If args.Length = 3 AndAlso args(0) = "--discover" Then
-                Dim campaign = JsonSerializer.Deserialize(Of CampaignInput)(File.ReadAllBytes(args(1)), New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True})
+                Dim campaign = ReadCampaign(args(1))
                 Dim plan = GlobalNpcDiscovery.Scan(campaign)
                 GlobalNpcDiscovery.WriteReport(campaign, plan, args(2))
                 Console.WriteLine($"{plan.Decisions.Count} winning NPC records; {plan.Pages.Count} planned pages; NOT converted. {plan.PlanSha256}")
@@ -29,5 +30,9 @@ Module Program
             Console.Error.WriteLine(ex.ToString())
             Return 1
         End Try
+    End Function
+    Private Function ReadCampaign(filePath As String) As CampaignInput
+        If New FileInfo(filePath).Length > 16L * 1024 * 1024 Then Throw New IOException("Campaign policy exceeds 16 MiB.")
+        Return JsonSerializer.Deserialize(Of CampaignInput)(File.ReadAllBytes(filePath), New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True})
     End Function
 End Module

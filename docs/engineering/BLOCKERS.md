@@ -27,3 +27,8 @@ approval and an available scheduling interface; none was activated.
 - Original FaceGen generator is now connected to staged output in code; real NIF/DDS generation still requires local licensed meshes/textures. Inspector completion is not a prerequisite for developing this adapter.
 - Coordinator stages uniquely named per-NPC shards and now has aggregate ESP export under Windows validation, with no automatic installation. Inherited-category frozen resolution and asset-content fingerprints remain implementation work, not requests to upload the collection.
 - Plugin/preset hashes are sealed; assets must remain frozen during local evaluation because a full resource-content manifest is not yet attached to resume. Body/outfit/runtime overlays and voice replacement are rejected or deferred rather than silently claimed.
+
+## Global scope blockers (new)
+- B06 / R15: the verified isolated export adapter rejects any localized plugin in the load order. This matters for GOTY/DLC and localized mods. Discovery reports it; automatic page preparation fails closed until original string resolution/export is integrated. Local test needs the profile's existing string tables/archives, never uploads.
+- B07 / R13: writer and FaceGen own their file handles; no verified hard output quota yet. Global discovery/page preparation only emit bounded metadata; no global asset-writing worker is enabled. Preflight estimates and post-write scans are not quota enforcement.
+- B08 / R14: companion faction/key rules and Unique/Essential/VMAD signals do not replace full quest/alias/scene/relationship analysis. Coverage is inventory/planning, never converted count. Robots/creatures/child redesign stay separate pending evidence.

@@ -23,9 +23,12 @@ Namespace ExperimentalTransformation
                 If total > input.Policy.MaxPluginBytes Then Throw New IOException("Plugin input-byte budget exceeded before loading.")
                 paths.Add(filePath)
             Next
+            Dim presetBytes As Long = 0
             For Each preset In input.Policy.FemalePresets
                 CheckPath(preset)
                 If New FileInfo(preset).Length > 4L * 1024 * 1024 Then Throw New IOException("Preset byte budget exceeded.")
+                presetBytes = checkedAdd(presetBytes, New FileInfo(preset).Length)
+                If presetBytes > 64L * 1024 * 1024 Then Throw New IOException("Preset pool exceeds 64 MiB.")
                 paths.Add(preset)
             Next
             Dim identity = Seal(input, paths)
@@ -89,7 +92,9 @@ Namespace ExperimentalTransformation
                     End Try
                 Next
                 If Seal(input, paths) <> identity Then Throw New IOException("Input changed during discovery.")
-                Return GlobalCampaign.Build(inventory, input.Policy, identity)
+                Dim blockers As New List(Of String)
+                If pm.Plugins.Any(Function(p) p.IsLocalized) Then blockers.Add("localized-load-order-export-not-integrated")
+                Return GlobalCampaign.Build(inventory, input.Policy, identity, blockers)
             Finally
                 Config_App.Current.Game = prior
             End Try
@@ -103,6 +108,7 @@ Namespace ExperimentalTransformation
             WriteBounded(input, plan, outputPath)
         End Sub
         Private Sub WriteBounded(input As CampaignInput, value As Object, outputPath As String)
+            GlobalCampaign.Build(Array.Empty(Of DiscoveredNpc)(), input.Policy, "report-preflight")
             Dim destination = Path.GetFullPath(outputPath)
             CheckPath(destination)
             For Each root In input.ProtectedRoots.Concat({input.DataRoot})

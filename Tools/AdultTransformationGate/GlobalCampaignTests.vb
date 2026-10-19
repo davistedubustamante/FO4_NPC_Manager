@@ -52,6 +52,8 @@ Module GlobalCampaignTests
         policy.CompanionFactions.Add("Companions|000123")
         all(13).Factions.Add("companions|000123")
         Check(GlobalCampaign.Build(all, policy, "hash").Decisions(13).Category = "companion", checks)
+        Dim localized = GlobalCampaign.Build(all, policy, "hash", {"localized-load-order-export-not-integrated"})
+        Reject(Sub() GlobalCampaign.CreateBatch(New CampaignInput, localized, 0), checks)
         policy.FemalePresets.Clear()
         Check(GlobalCampaign.Build(all, policy, "hash").Pages.Count = 0, checks)
         Return checks
@@ -63,7 +65,7 @@ Module GlobalCampaignTests
     Private Sub Reject(action As Action, ByRef checks As Integer)
         Try
             action()
-        Catch ex As Exception When TypeOf ex Is ArgumentException OrElse TypeOf ex Is InvalidDataException
+        Catch ex As Exception When TypeOf ex Is ArgumentException OrElse TypeOf ex Is InvalidDataException OrElse TypeOf ex Is InvalidOperationException
             checks += 1 : Return
         End Try
         Throw New Exception("Unsafe campaign accepted")

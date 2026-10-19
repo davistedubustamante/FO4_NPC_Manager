@@ -60,6 +60,11 @@ jobs:
       - name: Exercise the actual transformation engine with synthetic NPCs
         working-directory: Tools/AdultTransformationGate
         run: dotnet run --project AdultTransformationGate.vbproj --configuration Release -- experimental-synthetic-report.json
+      - name: Bound portable evidence payload
+        shell: pwsh
+        run: |
+          if ((Get-Item 'Tools/AdultTransformationGate/experimental-synthetic-report.json').Length -gt 1MB) { throw 'Portable report exceeds 1 MiB' }
+
       - name: Upload synthetic evidence (not a game patch)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -178,10 +183,16 @@ jobs:
           & $cli.FullName --discover (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/campaign-profile.json') (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/global-cli-inventory.json') *>&1 | Tee-Object -FilePath discovery-run.log
           if ($LASTEXITCODE -ne 0) { throw "Discovery CLI fixture failed: $LASTEXITCODE" }
 
+      - name: Prepare automatic campaign page through CLI
+        run: |
+          $cli = Get-ChildItem 'FO4_NPC_Manager/Tools/NpcConversionCli/bin' -Filter 'NpcConversionCli.exe' -Recurse | Select-Object -First 1
+          & $cli.FullName --prepare-page (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/campaign-profile.json') (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/global-cli-inventory.json') 0 (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/global-cli-page.json') *>&1 | Tee-Object -FilePath prepare-page-run.log
+          if ($LASTEXITCODE -ne 0) { throw "Automatic campaign page fixture failed: $LASTEXITCODE" }
+
       - name: Expose fixture gate diagnosis in job summary
         if: always()
         run: |
-          foreach ($log in @('npc-manager-build.log', 'roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log', 'conversion-run.log', 'discovery-run.log')) {
+          foreach ($log in @('npc-manager-build.log', 'roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log', 'conversion-run.log', 'discovery-run.log', 'prepare-page-run.log')) {
             if (Test-Path $log) {
               "### $log" >> $env:GITHUB_STEP_SUMMARY
               '```text' >> $env:GITHUB_STEP_SUMMARY

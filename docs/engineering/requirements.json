@@ -237,6 +237,24 @@
         "Robot/creature redesign requires rig/assets/gameplay evidence; no superficial success",
         "Child or unknown age remains blocked until adult redesign verified"
       ]
+    },
+    {
+      "id": "R15",
+      "requirement": "Localized GOTY/DLC/mod master strings integrated with verified production export",
+      "status": "pending",
+      "dependsOn": [
+        "R09",
+        "R12"
+      ],
+      "evidence": [
+        "Existing record export deliberately rejects any localized input. Global planning now exposes this blocker; no silent fallback."
+      ],
+      "acceptance": [
+        "Reuse original localized string resolver and archive/index APIs, never a second string parser",
+        "Resolve all required localized fields from isolated active resource view; missing tables/IDs fail closed",
+        "Binary localized fixture export/readback preserves strings and script/voice references",
+        "Real GOTY/DLC profile positive test recorded without uploading proprietary tables"
+      ]
     }
   ]
 }
