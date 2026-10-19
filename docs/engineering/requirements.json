@@ -127,6 +127,24 @@
         "quest/scene/dialogue/voice tests on actual collection runtime",
         "no original files or saves modified"
       ]
+    },
+    {
+      "id": "R09",
+      "requirement": "Headless production preset/ESP/FaceGen batch integration and recovery",
+      "status": "in_progress",
+      "dependsOn": [
+        "R02"
+      ],
+      "evidence": [
+        "Local journal gate: 18 assertions passed; production Windows CI pending"
+      ],
+      "acceptance": [
+        "Reuse original preset parser/category filter/save shadow/overlay/writer and FaceGen generator",
+        "Mixed batch continues after exclusion; partial outputs never checkpointed",
+        "Resume seals profile, input plugins/presets and verified output hashes",
+        "Windows binary integration tests and CLI compilation pass",
+        "Real FaceGen and game evidence remain separate from fixture checks"
+      ]
     }
   ]
 }

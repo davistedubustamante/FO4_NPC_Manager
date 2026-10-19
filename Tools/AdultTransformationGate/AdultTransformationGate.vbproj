@@ -9,6 +9,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../FO4_NPC_Manager/NPC/AdultTransformation.vb" Link="AdultTransformation.vb" />
+    <Compile Include="../../FO4_NPC_Manager/NPC/BatchJournal.vb" Link="BatchJournal.vb" />
+    <Compile Include="BatchJournalTests.vb" />
     <Compile Include="Program.vb" />
   </ItemGroup>
 </Project>

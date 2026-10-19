@@ -105,6 +105,33 @@ Module Program
             Dim inherited = Directory.CreateDirectory(Path.Combine(root, "inherited")).FullName
             Fixture(inherited, 1US)
             Reject(Sub() WriteRecordOnlyPatch(inherited, order, "Fixture.esm", &H800UI, Path.Combine(root, "inherited-patch"), AgeEvidence.Adult, "fixture"), "unmaterialized traits refused")
+            Dim presetPath = Path.Combine(root, "female-preset.json")
+            File.WriteAllText(presetPath, "{""Gender"":1,""Morphs"":{""Presets"":{""12345678"":0.25}}}")
+            Dim appearancePatch = WriteAppearancePatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "appearance"),
+                AgeEvidence.Adult, "generated adult human fixture", presetPath, "Fixture.esm", &H801UI)
+            Dim appearanceReader As New PluginReader() : appearanceReader.Load(appearancePatch)
+            Dim appearanceRecord = appearanceReader.Records.Values.Single()
+            Check(appearanceRecord.Subrecords.Any(Function(sr) sr.Signature = "MSDV"), "production preset face morph serialized")
+            Check(appearanceRecord.GetSubrecord("VMAD").Value.Data.SequenceEqual(New Byte() {6, 0, 2, 0, 0, 0}), "appearance overlay preserves script bytes")
+            Reject(Sub() WriteAppearancePatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "wrong-race"),
+                AgeEvidence.Adult, "fixture", presetPath, "Fixture.esm", &H802UI), "unapproved race excluded")
+            File.WriteAllText(presetPath, "{""Gender"":0,""Morphs"":{""Presets"":{""12345678"":0.25}}}")
+            Reject(Sub() WriteAppearancePatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "male-preset"),
+                AgeEvidence.Adult, "fixture", presetPath, "Fixture.esm", &H801UI), "male appearance excluded")
+            File.WriteAllText(presetPath, "{""Gender"":1,""Morphs"":{""Presets"":{""12345678"":0.25}}}")
+            Dim profile As New NpcBatchProfile With {.DataRoot = data, .LoadOrder = order.ToList(), .ProtectedRoots = New List(Of String) From {data}, .RequireFaceGen = False,
+                .Targets = New List(Of NpcBatchTarget) From {
+                    New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H999UI, .Age = AgeEvidence.Unknown},
+                    New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H800UI, .Age = AgeEvidence.Adult, .AdultEvidence = "generated fixture",
+                        .AppearancePreset = presetPath, .HumanRacePlugin = "Fixture.esm", .HumanRaceObjectId = &H801UI}}}
+            Dim batch = ProductionNpcBatch.Run(profile, root)
+            Check(batch.Items(0).Status = "BLOCKED-PARTIAL-NOT-INSTALLED", "batch records failure without marking success")
+            Check(batch.Items(1).Status = "APPEARANCE-RECORD-VERIFIED-NO-FACEGEN", "batch continues through real appearance writer")
+            Dim resumed = ProductionNpcBatch.Run(profile, root, batch.StagingDirectory)
+            Check(resumed.Items(1).Status = "RESUMED-VERIFIED-OUTPUTS", "batch resumes verified result without rewriting")
+            File.AppendAllText(presetPath, " ")
+            Reject(Sub() ProductionNpcBatch.Run(profile, root, batch.StagingDirectory), "resume seals preset content")
+            Check(sourceHash.SequenceEqual(SHA256.HashData(File.ReadAllBytes(Path.Combine(data, "Fixture.esm")))), "batch preserves original plugin")
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-round-trip", .inGameValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0

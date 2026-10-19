@@ -43,3 +43,9 @@
 - Engineering records workflow passed at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615502 for a0bf328; subsequent documentation updates are checked separately by the lightweight records workflow.
 - Original six dependency commits, native source provenance, x64 configurations and license contents retained. No merges, releases, installation, original game/save edits, paid-service activation or recurring task activation.
 - Limits: fixture has a minimal empty VMAD, not real quest-script properties. No actual collection resources, FaceGen, body/equipment, voiced dialogues, quests or in-game runtime were validated. Next requirement R05 depends on actual local metadata/collection versions.
+
+## Production integration iteration — work under validation
+- Reused original editor APIs after source audit; see PRODUCTION_INTEGRATION.md. Added production preset/save-shadow adapter, per-NPC batch coordinator, staged FaceGen call and dedicated Windows CLI. No replacement serializer/generator.
+- Local portable gate exit 0: original 31 assertions plus 18 journal assertions, including profile/output tampering, path overlap/escape, symlinks and logical quarantine.
+- Initial Roslyn syntax check found reserved VB identifier `overrides`; corrected to `edits`. Syntax parsing is not Windows semantic compilation.
+- Windows validation pending pushed code revision; real collection assets and in-game evidence unavailable.

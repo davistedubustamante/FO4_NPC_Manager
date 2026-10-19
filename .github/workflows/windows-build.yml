@@ -158,10 +158,15 @@ jobs:
           & $gate.FullName (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip') *>&1 | Tee-Object -FilePath roundtrip-run.log
           if ($LASTEXITCODE -ne 0) { throw "Round-trip verification failed: $LASTEXITCODE" }
 
+      - name: Compile experimental NPC conversion coordinator CLI
+        run: |
+          & $env:MSBUILD 'FO4_NPC_Manager/Tools/NpcConversionCli/NpcConversionCli.vbproj' '-t:Restore;Build' '-p:Configuration=Release;Platform=x64' '-m:2' '-v:minimal' '-bl:conversion-cli.binlog' *>&1 | Tee-Object -FilePath conversion-build.log
+          if ($LASTEXITCODE -ne 0) { throw "Conversion CLI build failed: $LASTEXITCODE" }
+
       - name: Expose fixture gate diagnosis in job summary
         if: always()
         run: |
-          foreach ($log in @('roundtrip-build.log', 'roundtrip-run.log')) {
+          foreach ($log in @('roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log')) {
             if (Test-Path $log) {
               "### $log" >> $env:GITHUB_STEP_SUMMARY
               '```text' >> $env:GITHUB_STEP_SUMMARY
@@ -197,6 +202,13 @@ jobs:
           if (!$cli) { throw 'FaceTint CLI executable missing' }
           New-Item -ItemType Directory -Force 'build-output/FaceTint-CLI' | Out-Null
           Copy-Item (Join-Path $cli.Directory.FullName '*') 'build-output/FaceTint-CLI' -Recurse -Force
+
+      - name: Collect experimental conversion CLI
+        run: |
+          $cli = Get-ChildItem 'FO4_NPC_Manager/Tools/NpcConversionCli/bin' -Filter 'NpcConversionCli.exe' -Recurse | Select-Object -First 1
+          if (!$cli) { throw 'Conversion CLI executable missing' }
+          New-Item -ItemType Directory -Force 'build-output/EXPERIMENTAL-Conversion-CLI' | Out-Null
+          Copy-Item (Join-Path $cli.Directory.FullName '*') 'build-output/EXPERIMENTAL-Conversion-CLI' -Recurse -Force
 
       - name: Verify license bundle and identify experimental provenance
         run: |
@@ -239,5 +251,6 @@ jobs:
           path: |
             *.binlog
             roundtrip-*.log
+            conversion-build.log
           retention-days: 7
           if-no-files-found: ignore
