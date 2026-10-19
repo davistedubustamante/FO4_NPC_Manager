@@ -236,3 +236,10 @@ Independent audit closes FaceGen stale-deletion admission and morph debug-dump p
 new Windows negative/retention checks. Native/cache/package scope remains blocked; audit map is
 NATIVE_WRITE_AUDIT.md, machine-readable scope storage-writers.json. LOCAL_AUTHENTIC_TRIAL.md
 now documents the quota-controlled record-only command. No real assets or full FaceGen proof.
+
+Additional recovery case: requested resume ceiling must equal the immutable ledger header;
+otherwise reject before output scope / ledger append. New BudgetBytes read-only property and
+portable creation/recovery assertions pass:134 total,17 controlled-writer assertions. Build
+exit0,zero warnings/errors. Windows adds mismatch rejection and byte-identical ledger checks.
+All previous named commits remain ancestors; tools1.2GiB+repository24MiB, no new dependencies.
+Windows validation must wait until active75b587b run completes; no overlapping build dispatched.

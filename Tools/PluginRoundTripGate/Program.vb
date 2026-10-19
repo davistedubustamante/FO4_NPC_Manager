@@ -544,6 +544,9 @@ Module Program
             Check(files.All(Function(p) budget.VerifiedNames.Contains(Path.GetRelativePath(workspace, p).Replace(Path.DirectorySeparatorChar, "/"c))), "every controlled ESP checkpoint copy and report has durable quota completion")
             Check(files.Any(Function(p) p.EndsWith(".esp", StringComparison.Ordinal)) AndAlso files.All(Function(p) Not p.EndsWith(".bak", StringComparison.OrdinalIgnoreCase)), "controlled writer bypasses legacy backup/temp path operations")
         End Using
+        Dim ledgerBeforeMismatch = File.ReadAllBytes(Path.Combine(workspace, "budget-ledger.jsonl"))
+        Reject(Sub() ProductionNpcBatch.RunControlled(profile, workspace, 4096, True), "resume cannot silently retain larger quota than requested")
+        Check(File.ReadAllBytes(Path.Combine(workspace, "budget-ledger.jsonl")).SequenceEqual(ledgerBeforeMismatch), "quota mismatch does not mutate checkpoint ledger")
         Dim resumed = ProductionNpcBatch.RunControlled(profile, workspace, 1024 * 1024, True)
         Check(resumed.Items.Single().Status = "RESUMED-VERIFIED-OUTPUTS", "quota-bound original batch journal resumes verified NPC")
         Check(Directory.EnumerateFiles(workspace, "*", SearchOption.AllDirectories).Sum(Function(p) New FileInfo(p).Length) <= 1024 * 1024, "all controlled batch file bytes and ledger under aggregate ceiling")

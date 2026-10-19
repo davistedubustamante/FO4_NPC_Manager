@@ -53,3 +53,21 @@ approval and an available scheduling interface; none was activated.
 205fb47 /39335263895 passed169 Windows checks and117 portable assertions. Controlled FaceGen DDS output admission is verified in fixture scope; NIF generation and all ESP/cache/temp/auxiliary paths still do not have complete hard-quota certification. Read-only BA2 asset-member preflight (single-chunk GNRL/DX10) is in final Windows validation; real resources and multi-chunk routes remain blocked.
 
 Final e56a6db /39336072090 completed Windows Success,176 mandatory checks and117 portable assertions. Selected BA2 read-only DDS preflight now passes controlled fixtures too. storage-writers.json is the authoritative current R13 scope map; completeHardQuotaVerified=false. Real assets/runtime, unsupported layouts/categories and all remaining original path writers remain the blockers, not an unexplained CI failure.
+
+### R13 current admission (supersedes earlier NOT INTEGRATED ESP notes)
+
+add796b /39343409625 passed186 Windows fixture assertions: original ESP serialization now uses
+the verified additive stream interface, and controlled record shards/checkpoints/reports/aggregate
+ESP/copies share a pre-write quota with recovery. Full workflow hit CLI BC30616; fixed75b587b,
+retry39343903446 in progress. This is no longer an original-ESP interface blocker.
+
+Remaining full-generation blockers: complete reachable native/cache/temp/package audit, positive
+genuine NIF/DDS/material generation under the same gateway, body/equipment resources and local
+runtime evidence. Physical filesystem allocation overhead remains outside the logical-byte bound.
+The controlled record entry point rejects RequireFaceGen=true before workspace creation; the
+global mass worker remains disabled. Legacy GUI/positional CLI are not an alternate quota-certified
+route. Do not request collection uploads or install anything to bypass these admission failures.
+
+Independent recovery tightening: a resumed controlled trial must present the original immutable
+quota. A changed requested ceiling is rejected without appending to the ledger; portable134
+assertions pass, Windows mismatch test pending. See NATIVE_WRITE_AUDIT.md and storage-writers.json.

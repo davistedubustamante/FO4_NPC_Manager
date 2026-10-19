@@ -48,6 +48,7 @@ Namespace ExperimentalTransformation
                     If full.Equals(source, StringComparison.OrdinalIgnoreCase) OrElse full.StartsWith(source & Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) OrElse source.StartsWith(full & Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) Then Throw New IOException("Controlled workspace overlaps original input.")
                 Next
                 Using budget = If(resumeExisting, ReservedWriteBudget.Recover(full), ReservedWriteBudget.Create(full, budgetBytes, roots))
+                    If budget.BudgetBytes <> budgetBytes Then Throw New InvalidDataException("Resume budget differs from the original immutable ceiling.")
                     Using scope = ControlledFileOutput.Begin(budget)
                         Dim previousStage As String = Nothing
                         If resumeExisting Then

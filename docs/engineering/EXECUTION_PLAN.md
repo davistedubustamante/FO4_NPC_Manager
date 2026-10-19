@@ -67,3 +67,9 @@ add796b /39343409625 passed186 Windows fixture checks and GUI/native builds; CLI
 because new nested locals hide existing outer locals. Retry1 renames the two locals and adds
 five independent stale-cleanup/morph-diagnostic admission checks.132 portable assertions passed.
 Full workflow success is pending; no mass or complete FaceGen worker enabled.
+
+Additional recovery check selected while retry1 runs: bind the resumed command's requested quota
+to the immutable ledger header. Previously Recover retained the original ceiling even when the
+CLI specified another value. Add read-only BudgetBytes, reject mismatch before controlled scope,
+and test ledger unchanged plus valid resume. Portable134 assertions pass, build exit0/no warnings.
+Queue its changed-code Windows validation only after the active run finishes; never overlap runs.

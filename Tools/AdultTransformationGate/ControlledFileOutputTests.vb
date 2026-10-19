@@ -25,6 +25,7 @@ Module ControlledFileOutputTests
         Dim stage As String = Nothing
         Dim identity = Encoding.UTF8.GetBytes("fixture-profile")
         Using budget = ReservedWriteBudget.Create(workspace, 16384, {original})
+            check(budget.BudgetBytes = 16384)
             Using scope = ControlledFileOutput.Begin(budget)
                 Dim journal = BatchJournal.Create(workspace, {original}, identity)
                 stage = journal.StagingDirectory
@@ -49,6 +50,7 @@ Module ControlledFileOutputTests
             End Using
         End Using
         Using budget = ReservedWriteBudget.Recover(workspace)
+            check(budget.BudgetBytes = 16384)
             Using scope = ControlledFileOutput.Begin(budget)
                 Dim journal = BatchJournal.Recover(stage, identity)
                 check(journal.ContainsVerifiedCheckpoint("npc"))

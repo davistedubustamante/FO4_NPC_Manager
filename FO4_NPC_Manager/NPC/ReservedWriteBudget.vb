@@ -31,6 +31,11 @@ Namespace ExperimentalTransformation
                 Return root
             End Get
         End Property
+        Public ReadOnly Property BudgetBytes As Long
+            Get
+                Return ceiling
+            End Get
+        End Property
         Public ReadOnly Property RemainingBytes As Long
             Get
                 Return ceiling - reserved - ledger.Length
