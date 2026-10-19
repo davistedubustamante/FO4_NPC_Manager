@@ -45,7 +45,7 @@ Profile shape (paths and identities are examples; do not run against an original
 }
 ```
 
-Check the actual `AgeEvidence` enum before authoring a profile; numeric 1 denotes Adult. Race identity is explicitly approved by the profile author, not inferred by the tool. Object IDs are decimal JSON integers. No fixture master belongs in a real load order. Never upload proprietary inputs or private profiles. The adapter currently requires readable nonlocalized plugins, complete ordered masters and noninherited NPC records.
+Check the actual `AgeEvidence` enum before authoring a profile; numeric 1 denotes Adult. Race identity is explicitly approved by the profile author, not inferred by the tool. Object IDs are decimal JSON integers in their originating plugin: 24 bits for full plugins, 12 bits for ESL. Oversized IDs are rejected before the library can mask them to another NPC/race. No fixture master belongs in a real load order. Never upload proprietary inputs or private profiles. The adapter currently requires readable nonlocalized plugins, complete ordered masters and noninherited NPC records.
 
 ## Result and recovery semantics
 
@@ -60,3 +60,11 @@ Check the actual `AgeEvidence` enum before authoring a profile; numeric 1 denote
 CI uses generated binary plugins through production reader/overlay/writer and tests mixed-batch continuation/resume. The standalone journal tests are infrastructure tests, not conversion evidence. The resource index is initialized once per batch process with the explicit load order and a staging-only cache. An index error is retained as a blocker for later targets; it is not retried unchanged for every NPC.
 
 Real human adult NPC → NIF/DDS → separate game profile remains blocked on locally available licensed resources. Body/skin delivery, armor model validation, voice/dialogue regressions and actual CRU/WoD compatibility are pending. Do not rename or distribute staged bundles as validated mods.
+
+## CRU/WoD interoperability contract
+
+Collection identity/version is still unknown; this is an integration contract, not a compatibility certification. The adapter consumes the winning plugin order supplied by the private profile and the resources visible under its Data root. It does not import a mod-manager collection, reorder plugins or resolve an entire collection from mod names.
+
+For mod-manager deployments, multiple mod-storage directories alone are not a resolved Data view. Local evaluation needs an already authorized separate profile whose virtualized or staged Data exposes the actual winning loose files and active archives. The original resource index receives the explicit plugin list, not an inferred system Plugins.txt. Do not point it at an incomplete physical Data folder and assume all virtual mods were seen. Inspect the local resource-index errors and verify representative winning mesh/material/texture origins before accepting FaceGen.
+
+FaceGen paths retain the originating NPC plugin identity using the original generator; changing the aggregate ESP filename does not change that identity. The aggregate overrides only selected NPC records, keeps their voice/script identities and ships generated resources separately. This reduces the edit surface but does not prove scene conditions, outfit models, body morph delivery or quest compatibility. Validation must record collection versions, runtime/F4SE/LooksMenu versions, exact load order, preset provenance and the locally frozen resource view. No collection installation, profile activation or save mutation is performed by this tool.

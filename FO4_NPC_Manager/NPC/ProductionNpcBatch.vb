@@ -137,7 +137,7 @@ Namespace ExperimentalTransformation
         Private Sub VerifyStableInputs(profile As NpcBatchProfile, seal As Byte(), journal As BatchJournal)
             Try
                 If seal.SequenceEqual(SealProfile(profile)) Then Return
-            Catch ex As IOException
+            Catch ex As Exception When TypeOf ex Is IOException OrElse TypeOf ex Is UnauthorizedAccessException
                 journal.Quarantine("Input became unreadable during processing: " & ex.Message)
                 Throw
             End Try

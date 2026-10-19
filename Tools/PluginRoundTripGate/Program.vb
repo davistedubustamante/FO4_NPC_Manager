@@ -40,7 +40,7 @@ Module Program
     Private Function Text(value As String) As Byte()
         Return Encoding.UTF8.GetBytes(value & ChrW(0))
     End Function
-    Private Sub Fixture(data As String, Optional templates As UShort = 0US, Optional twoNpcs As Boolean = False)
+    Private Sub Fixture(data As String, Optional templates As UShort = 0US, Optional twoNpcs As Boolean = False, Optional light As Boolean = False)
         Dim game = Config_App.Game_Enum.Fallout4
         File.WriteAllBytes(Path.Combine(data, "Fallout4.esm"), GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String), 0, &H800UI, "fixture", False))
         Dim acbs(19) As Byte
@@ -68,7 +68,7 @@ Module Program
         Dim race = GenericPluginWriter.WrapRecord("RACE", Sr("EDID", Text("AdultRaceFixture")), 0UI, &H1000801UI, 0UI, 0US, game)
         Dim voice = GenericPluginWriter.WrapRecord("VTYP", Sr("EDID", Text("QuestVoiceFixture")), 0UI, &H1000802UI, 0UI, 0US, game)
         Dim npcClass = GenericPluginWriter.WrapRecord("CLAS", Sr("EDID", Text("ClassFixture")), 0UI, &H1000803UI, 0UI, 0US, game)
-        Dim header = GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String) From {"Fallout4.esm"}, If(twoNpcs, 9, 8), &H805UI, "fixture", False)
+        Dim header = GenericPluginWriter.BuildTes4Header(game, True, light, New List(Of String) From {"Fallout4.esm"}, If(twoNpcs, 9, 8), &H805UI, "fixture", False)
         File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), header.Concat(GenericPluginWriter.BuildGrup("CLAS", New List(Of Byte()) From {npcClass})) _
             .Concat(GenericPluginWriter.BuildGrup("RACE", New List(Of Byte()) From {race})) _
             .Concat(GenericPluginWriter.BuildGrup("NPC_", npcRecords)) _
@@ -162,6 +162,16 @@ Module Program
             File.AppendAllText(Path.Combine(aggregate.BundleDirectory, "EXPERIMENTAL-NPC-Batch.esp"), "tamper")
             Reject(Sub() ProductionNpcBatch.Run(multiProfile, root, aggregate.StagingDirectory), "tampered aggregate blocks resume")
             File.WriteAllText(Path.Combine(root, "cli-profile.json"), JsonSerializer.Serialize(multiProfile))
+            Dim lightData = Directory.CreateDirectory(Path.Combine(root, "light-inputs")).FullName
+            Fixture(lightData, light:=True)
+            Dim lightPatch = WriteAppearancePatch(lightData, order, "Fixture.esm", &H800UI, Path.Combine(root, "light-appearance"),
+                AgeEvidence.Adult, "generated light adult fixture", presetPath, "Fixture.esm", &H801UI)
+            Dim lightReader As New PluginReader() : lightReader.Load(lightPatch)
+            Dim lightPm As New PluginManager() : lightPm.LoadAllPlugins(lightData, order)
+            Check(lightPm.ResolveFormID(lightReader.Records.Values.Single().Header.FormID, lightReader) = &HFE000800UI, "ESL target identity survives appearance export")
+            Reject(Sub() WriteRecordOnlyPatch(lightData, order, "Fixture.esm", &H100800UI, Path.Combine(root, "light-alias"), AgeEvidence.Adult, "fixture"), "oversized ESL object ID cannot alias another NPC")
+            Reject(Sub() WriteAppearancePatch(lightData, order, "Fixture.esm", &H800UI, Path.Combine(root, "light-race-alias"), AgeEvidence.Adult,
+                "fixture", presetPath, "Fixture.esm", &H100801UI), "oversized ESL race identity cannot alias approval")
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0

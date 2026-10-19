@@ -65,6 +65,7 @@ Namespace ExperimentalTransformation
             pm.LoadAllPlugins(inputRoot, names)
             If names.Any(Function(n) Not pm.IsLoaded(n)) Then Throw New InvalidOperationException("Incomplete load order.")
             Dim fid = pm.GlobalFormIDFromObjectID(sourcePlugin, objectId)
+            If fid = 0UI OrElse PluginManager.ToFaceGenLocalFormID(fid) <> objectId Then Throw New ArgumentException("Object ID does not fit the originating plugin's full/light slot space.")
             Dim raw = pm.GetRecord(fid)
             If raw Is Nothing OrElse raw.Header.Signature <> "NPC_" OrElse raw.Header.IsDeleted Then Throw New InvalidOperationException("Expected a live NPC_ record.")
             Dim npc = RecordParsers.ParseNPC(raw, pm)
@@ -78,7 +79,9 @@ Namespace ExperimentalTransformation
             ' Reflect the edited session sex before overlay, as the GUI does; never mutate the raw record.
             NpcRecordOverrideApplier.AplicarEscalares(npc, fid, edits)
             If appearance Then
-                If npc.Record.Race <> pm.GlobalFormIDFromObjectID(humanRacePlugin, humanRaceObjectId) Then Throw New InvalidOperationException("Approved human race does not match target.")
+                Dim approvedRace = pm.GlobalFormIDFromObjectID(humanRacePlugin, humanRaceObjectId)
+                If approvedRace = 0UI OrElse PluginManager.ToFaceGenLocalFormID(approvedRace) <> humanRaceObjectId Then Throw New ArgumentException("Approved race object ID does not fit its originating plugin.")
+                If npc.Record.Race <> approvedRace Then Throw New InvalidOperationException("Approved human race does not match target.")
                 RejectReparseAncestors(presetPath)
                 presetHash = HashFile(presetPath)
                 Dim preset = LooksmenuLoader.ParseFile(presetPath, pm)

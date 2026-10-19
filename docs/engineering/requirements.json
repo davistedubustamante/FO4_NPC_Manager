@@ -131,12 +131,14 @@
     {
       "id": "R09",
       "requirement": "Headless production preset/ESP/FaceGen batch integration and recovery",
-      "status": "in_progress",
+      "status": "verified",
       "dependsOn": [
         "R02"
       ],
       "evidence": [
-        "Local journal gate: 18 assertions passed; production Windows CI pending"
+        "BINARY FIXTURE SCOPE ONLY: 37 production integration assertions and actual two-NPC conversion CLI execution passed at 9adb4a6",
+        "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39259948641",
+        "No real FaceGen, playable collection, body/voice/quest or in-game certification implied"
       ],
       "acceptance": [
         "Reuse original preset parser/category filter/save shadow/overlay/writer and FaceGen generator",
@@ -149,11 +151,15 @@
     {
       "id": "R10",
       "requirement": "Consolidate verified batch into one isolated ESP and generated resource bundle",
-      "status": "in_progress",
+      "status": "verified",
       "dependsOn": [
         "R09"
       ],
-      "evidence": [],
+      "evidence": [
+        "BINARY FIXTURE SCOPE ONLY: 37 production integration assertions and actual two-NPC conversion CLI execution passed at 9adb4a6",
+        "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39259948641",
+        "No real FaceGen, playable collection, body/voice/quest or in-game certification implied"
+      ],
       "acceptance": [
         "Reuse original multientry ESP writer, never a second serializer",
         "Reopen two-NPC aggregate and compare canonical global identities/content/headers",
