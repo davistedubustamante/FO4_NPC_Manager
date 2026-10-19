@@ -25,7 +25,7 @@ approval and an available scheduling interface; none was activated.
 
 ## Integration-specific limits
 - Original FaceGen generator is now connected to staged output in code; real NIF/DDS generation still requires local licensed meshes/textures. Inspector completion is not a prerequisite for developing this adapter.
-- Coordinator stages uniquely named per-NPC shards and now has aggregate ESP export under Windows validation, with no automatic installation. Inherited-category frozen resolution and asset-content fingerprints remain implementation work, not requests to upload the collection.
+- Coordinator stages uniquely named per-NPC shards and has aggregate ESP/file-copy validation on controlled fixtures, with no automatic installation. Inherited-category frozen resolution and asset-content fingerprints remain implementation work, not requests to upload the collection.
 - Plugin/preset hashes are sealed; assets must remain frozen during local evaluation because a full resource-content manifest is not yet attached to resume. Body/outfit/runtime overlays and voice replacement are rejected or deferred rather than silently claimed.
 
 ## Global scope blockers (new)

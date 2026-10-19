@@ -1,39 +1,38 @@
 # Persistent execution plan
 
-Branch: dev/npc-transformation-experimental. Baseline preserved: d09860b.
-Latest runtime-verified code: 74289ec (production batch/preset/aggregate/CLI/ESL fixture scope). No recurring scheduler is active.
+Branch: dev/npc-transformation-experimental. Preserve 74289ec, d1e483f and all prior progress. No merge, release, installation, original game/save edits or recurring automation activation.
 
-## Current scope expansion: global Fallout 4 GOTY + DLC + active WoD
-Preserve 74289ec and all later verified documentation. Selected R12: original-loader global NPC discovery, winning override lineage, conservative category routing, reviewed adult generic priority and deterministic small pages. GLOBAL_CONVERTER.md records architecture, storage limits and missing local evidence. Local planner tests exercise 10,000 entries; Windows regression/discovery validation pending current revision. R13 execution, R14 narrative/special redesign, R15 localization and R16 final global certification are separate requirements, not claimed by planning. No Lite-mod dependency, asset upload/duplication, installation or merge.
+## Goal and verified checkpoints
 
-## Completed engineering iteration (fixture scope)
-- R01 verified: AGENTS, requirement DAG, blockers, evidence and resume instructions in Git; lightweight records CI passes.
-- R02 verified on generated binary fixtures: load an NPC_ with the pinned library, write an isolated record-only ESP, reopen, resolve cleaned-master indexes, compare canonical global-FormID content, preserve headers/subrecord structure and input hashes. 21 assertions passed in Windows CI.
-- R03 verified on generated fixtures: offline Windows inspector, bounded BA2 name indexes, private local root bindings, output protection and reparse handling. Windows: 20 tests passed including PowerShell; Linux: 19 passed, 1 Windows-only skipped.
-- R04 prepared and inactive: reusable prompt, proposed schedule and advisory budgets; no callable Codex scheduler in this session and no activation performed.
-- Full native/GUI Publish|x64/CLI Release|x64/integration-gate build passed at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615511 (a0bf328).
+Final target: female conversion across Fallout 4 GOTY, DLC and every active WoD plugin, with separate verified redesign paths for special categories. GLOBAL_CONVERTER.md defines the architecture. R16 is final certification and remains pending; inventory/plans/flag edits are never global conversion proof. No dependence on the historical three Lite mods.
 
-## Verified production records: R09 integration and R10 ESP milestone (binary-fixture scope)
-9adb4a6 passed full Windows CI at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39259948641: 37 integration assertions plus actual two-NPC CLI execution. Original reader, override applier, preset parser/filter, save shadow, ESP writer and FaceGen entry point are reused. Mixed failures, partial attempts, hash-sealed resume and one aggregate ESP are implemented. See PRODUCTION_INTEGRATION.md for APIs and evidence boundaries. Positive real FaceGen remains blocked, not certified by these checks.
+Latest runtime-verified code: e71248f at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39272442946 (Success). Native, GUI, original/new CLI, 72 integration assertions, actual discovery and automatic page preparation passed. Earlier verified checkpoint d1e483f remains preserved.
 
-## Completed ESL hardening — 74289ec
-Full Windows CI passed: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287. 40 mandatory production assertions and actual two-NPC CLI execution succeeded, including positive ESL appearance readback and negative truncated NPC/race IDs. Pipeline v3 identity rejects pre-guard journals. Portable baseline 31 and journal 21 passed in both matrix jobs; inspector Windows 20 passed, Linux 19 passed plus one platform skip. Dependency pins/licenses remain intact.
+- R01: persistent recovery records, DAG, retry and authorization boundaries verified.
+- R02/R09: original reader, overrides, preset parser/filter/save shadow, writer, semantic readback and staged FaceGen entry point reused. Positive real FaceGen is not certified.
+- R03: local read-only inspector verified on fixtures; actual installation data remains local/unavailable in cloud.
+- R04: recurring proposal prepared, disabled; no callable scheduler was available.
+- R10: aggregate ESP and controlled checkpointed file-copy/dedup/conflict/tamper tests passed. Controlled .bin files prove copy semantics, not NIF/DDS or in-game compatibility.
+- R12: winning NPC discovery/lineage, reviewed category/adult policies, child/unknown/deleted/ESL/stale/localized admission and deterministic pages verified on generated binary fixtures. Portable planner exercises 10,000 entries. This is not 10,000 game conversions.
 
-Four actual production gate executions were used (two diagnosed failures, aggregate success, final ESL success). One intermediate workflow was cancelled during GUI compilation before the gate started because the pipeline identity needed invalidation. Do not run another unchanged full Windows build in this session. Documentation-only updates use the records workflow.
+## Current verification
 
-## First unverified export check: R10 resource-copy/conflict branch
-The record-only two-NPC aggregate is verified. The branch that copies generated resources and rejects shared-path conflicts is compiled, but was not executed by those record-only fixtures. Keep R10 in_progress. Add controlled staging-copy tests using checkpointed generated files (copy/hash semantics only, not fake NIF validation), then require actual FaceGen resources for the complete bundle acceptance in R06.
+Verified e71248f: original loader sigFilter, loaded-record count, shared preset admission and distinct actual-inventory/policy bounds. Windows assertions passed: 72; portable baseline 31 + journal 21 + campaign 23. Local pinned SDK rebuild/runtime and inspector checks pass. No new dependency installation or pin changes.
 
-## Next independent implementation: R11 — inherited Traits
-Use the original chain resolver and frozen materializer to remove the current blanket template rejection safely. Start with explicit adult-human evidence and actual reader/writer fixtures including nonempty VMAD. Preserve voice and other inherited-category semantics; unresolved/cyclic chains stay excluded. This work is independent of inspector output and does not require uploading collection assets.
+Global iteration attempts: 1 failed harness compile (sr/Sr shadowing); 2 failed harness compile (copyJournal/CopyJournal shadowing); 3 fully passed; 4 final refinement fully passed. Four-execution limit respected; no fifth full build. Both compilation failures and their causes remain in EVIDENCE.md. Documentation-only changes use engineering-records CI.
 
-## Next feasible work and real-input acceptance
-The inspector is not a development gate. Next implementation work includes frozen inherited-category resolutions through the existing materializer, candidate/profile discovery using the existing reader, and content fingerprints for referenced resources. Real acceptance needs one authorized adult human NPC and licensed local resources in a frozen separate Windows profile: staged ESP + NIF/DDS, then body/equipment and quest/dialogue regressions. R05–R08 remain blocked on their actual inputs/evidence, not on further code development. No collection upload or original installation/save mutation is required.
+## Next feasible implementation
 
-## Resume procedure
-Read AGENTS.md, requirements.json, BLOCKERS.md and EVIDENCE.md. Inspect git status and actual CI before advancing state. Keep user work; no resets or automatic merges. Start from the first feasible pending requirement, not from a clean infrastructure rebuild. Use pinned reader/writer/editor functions. Run meaningful local and Windows checks; initial execution plus at most three diagnosis-driven retries (four total). Keep one active Windows run per code revision. At the cap record the diagnosis, checkpoint and switch to independent work; no unchanged retries or a fifth full build in that cycle.
+1. R15 localization: remove the current verified export boundary only after explicit isolated language selection, table/resource provenance and missing-table/ID failures are tested. Reuse PluginManager.TryResolveLocalizedString, CanonResolver.TryText and canonical writer findings. Do not add string parsers or rely silently on INI/UI-culture/English fallback. Generate controlled string fixtures; actual game tables remain local.
+2. R11 inherited Traits: reuse the existing chain resolver and frozen materializer. Include nonempty VMAD and preserve voice/other inherited categories. Unknown/cyclic/unresolved chains remain blocked.
+3. R14 narrative/special routes: original record APIs for quests, aliases, scenes, relationships and voices. Companion faction/key and Unique/Essential/VMAD signals are triage, not complete dependency analysis. Robots/creatures/child redesign need independent proof.
+4. R13 campaign executor: campaign/page identity and output hashes, one sequential worker, pause/resume and hard output quota before enabling writer/FaceGen. Estimates/post-write checks are not quotas. Depends on actual asset/body and admission evidence.
+5. R16: reconcile actual complete GOTY/DLC/WoD profile and runtime-only coverage; certify real bundles, missions/scenes/voices and category-specific redesign. No unverified target silently counted converted.
 
-Historical failed runs are retained in EVIDENCE.md. The final fix added global-space semantic verification after observing legitimate CleanMasters remapping; it did not remove content-preservation checks.
+The inspector is a helper, not a development gate. Continue independent code work when local game resources are missing. Actual positive FaceGen/body/equipment/runtime tests require a frozen authorized separate Windows profile with licensed resources. Never upload or duplicate the 300 GB collection.
 
-## Activation boundary
-The automation proposal is disabled and is not a supported Codex import schema. Confirm actual scheduler capability, execution location, usage allowance, concurrency and pause controls, and obtain explicit approval before activation. No background coding continues merely because this plan exists.
+## Storage and resume
+
+Reuse SDK/pinned caches; cloud working-set ceiling 2 GiB (observed tools 1.2 GiB + repository 22 MiB). Bounded new Windows artifacts at most 256 MiB plus portable matrix evidence at most 1 MiB/job; retention two days; do not delete existing user artifacts. Discovery writes bounded metadata only. Production v4/global plan v4 reject older admission fingerprints without deleting prior staging.
+
+On resume read AGENTS.md, requirements.json, BLOCKERS.md and EVIDENCE.md; inspect Git and actual CI, then select first viable pending requirement. Preserve user work. Initial attempt plus at most three diagnosis-driven retries per failing step, one active Windows revision. Do not rebuild unchanged passing code. No background work is implied by this plan or the disabled automation proposal.

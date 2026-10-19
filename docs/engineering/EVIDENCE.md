@@ -123,3 +123,14 @@ R10 remains in_progress: the aggregate ESP path and resume checks passed on gene
 - Controlled .bin staging resources exercise actual aggregate copy/dedup/conflict/tamper branches; no fake NIF/DDS claim. R10 is verified only for that file-copy/ESP scope; real FaceGen remains R06. Global fixture exercises actual canonical race creation, child/deleted/ESL/winner identity, explicit adult generic scheduling, stale/localized admission and no original-output writes.
 - Portable matrix: baseline 31 + journal 21 + campaign 21 assertions passed; campaign cases include 10000 rows. Windows inspector 20 passed; Linux 19 passed and one Windows-only skipped.
 - Last feasible optimization selected: reuse existing loader sigFilter to omit unrelated groups, expose loaded record count, share existing preset guard rather than duplicate admission checks, and add distinct policy-vs-actual-inventory limit tests. Final bounded run will validate this code revision; do not restart infrastructure or install anything.
+
+### Final local verification for e71248f
+- SDK 8.0.408 selected from Tools/AdultTransformationGate/global.json: explicit --no-restore Release rebuild exit 0, zero warnings/errors. Executed rebuilt DLL: baseline 31 + journal 21 + campaign 23 assertions passed. Distinct checks now exercise actual inventory overflow separately from oversized adult-policy evidence.
+- Inspector: exit 0, 20 discovered, 19 passed and one Windows-only skipped. Records validator: exit 0, 16 requirements, acyclic DAG, automation disabled.
+- Cloud storage rechecked: cached tools 1.2 GiB, repository 22 MiB, no collection/assets downloaded, no new installations. Final Windows validation pending.
+
+## Final Windows verification: e71248f
+
+https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39272442946 completed Success. All Windows compilation, 72 mandatory integration assertions, actual export/discovery/prepare-page CLI commands, license/provenance checks and bounded experimental artifact publication passed. Five workflow artifacts reported. Portable baseline 31, journal 21 and campaign 23 assertions passed; campaign uses 10,000 synthetic entries. Inspector Windows 20 tests; Linux 19 passed and one Windows-only skip. Original dependency pins preserved.
+
+Four full Windows attempts in this global iteration: two diagnosed VB harness compilation failures, one successful checkpoint d1e483f, one successful final refinement e71248f. No fifth execution. Neither planner volume nor controlled aggregate copy tests certify real FaceGen, localized GOTY/DLC export, narrative behavior or global conversion. R13–R16 remain pending with explicit boundaries.

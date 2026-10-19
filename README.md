@@ -72,6 +72,18 @@ dotnet run --configuration Release -- experimental-report.json
 Outputs remain experimental until real plugin, FaceGen, dialogue, quest and collection
 compatibility checks pass. No game installation is required for these synthetic checks.
 
+## Global Fallout 4 GOTY / DLC / WoD campaign planning
+
+The [global architecture and local CLI](docs/engineering/GLOBAL_CONVERTER.md) now discover winning
+NPC_ records from an explicit active load order, retain override chains and classify conservative
+category/adult policies. Deterministic small pages feed the existing production pipeline without
+manual NPC selection in the GUI. Plans and prepared pages are not converted characters.
+
+Generic adult humans have priority; unique/companion/special cases require regression review.
+Robots/creatures have separate pending redesign routes; child/unknown adulthood stays blocked.
+The global executor remains pending hard output quota, localized-master export, asset/body and
+narrative verification. Resources stay in the isolated local profile; no collection upload/copy.
+
 ## Autonomous engineering and local collection inspection
 
 Start with [AGENTS.md](AGENTS.md) and the [persistent execution plan](docs/engineering/EXECUTION_PLAN.md).
