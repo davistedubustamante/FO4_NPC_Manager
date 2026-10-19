@@ -1,0 +1,129 @@
+name: Windows x64 build - FO4 NPC Manager
+on:
+  push:
+    branches:
+      - ci/windows-fo4-npc-manager
+    paths:
+      - ".github/workflows/windows-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fo4-npc-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Check out FO4 NPC Manager
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: FO4_NPC_Manager
+          persist-credentials: false
+
+      - name: Fetch pinned source dependencies in required relative layout
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repos = @(
+            @{ url='https://github.com/MANOLOV02/FO4_Base_Library.git'; dest='FO4_Base_Library'; rev='8dc93e189cccfe026c128eb60d06c94fc949831b' },
+            @{ url='https://github.com/MANOLOV02/BSA_BA2_Library_DLL.git'; dest='Ba2_Bsa_Library'; rev='1bfbeb59ca54219e3f208fbee52bc904ef39f743' },
+            @{ url='https://github.com/MANOLOV02/NiflySharpFork.git'; dest='NiflySharp'; rev='1e2d9cdfafa9c97c88fc8dd9ca0dc9ecca65a8a8' },
+            @{ url='https://github.com/ousnius/Material-Editor.git'; dest='Material-Editor-master'; rev='21411873f17454a2442d6785d533499e14c63adb' },
+            @{ url='https://github.com/MANOLOV02/DirectXTexWrapper.git'; dest='../DirectXTextWrapper'; rev='85bf1b688909787d773304f5d40e5577ccddff9e' },
+            @{ url='https://github.com/microsoft/DirectXTex.git'; dest='../DirectXTex'; rev='4234f77df9c6c8bb2880607b82d5d597b54d1fa9' }
+          )
+          foreach ($item in $repos) {
+            $dest = [System.IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE $item.dest))
+            git clone --quiet --no-checkout $item.url $dest
+            if ($LASTEXITCODE -ne 0) { throw "Failed to clone $($item.url)" }
+            git -C $dest checkout --quiet --detach $item.rev
+            if ($LASTEXITCODE -ne 0) { throw "Failed to checkout $($item.rev)" }
+            if ($item.dest -eq 'NiflySharp') {
+              git -C $dest submodule update --init --recursive
+              if ($LASTEXITCODE -ne 0) { throw 'NiflySharp submodule update failed' }
+            }
+            Write-Host "$($item.dest) at $($item.rev)"
+          }
+          $layout = @(
+            'FO4_NPC_Manager/FO4_NPC_Manager/NPC_Manager_FO4.vbproj',
+            'FO4_Base_Library/FO4_Base_Library.vbproj',
+            'Ba2_Bsa_Library/BSA_BA2_Library_DLL.vbproj',
+            'NiflySharp/NiflySharp/NiflySharp.csproj',
+            'Material-Editor-master/MaterialLib/MaterialLib.csproj'
+          )
+          foreach ($path in $layout) {
+            if (!(Test-Path (Join-Path $env:GITHUB_WORKSPACE $path))) { throw "Missing $path" }
+          }
+
+      - name: Find VS 2026 MSBuild and validate v145
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (!(Test-Path $vswhere)) { throw 'vswhere.exe not installed' }
+          $vs = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          if (!$vs) { throw 'MSBuild not present in Visual Studio installation' }
+          $msbuild = Join-Path $vs 'MSBuild\Current\Bin\MSBuild.exe'
+          if (!(Test-Path $msbuild)) { throw "MSBuild unavailable: $msbuild" }
+          $toolsets = Get-ChildItem (Join-Path $vs 'MSBuild\Microsoft\VC\v180\Platforms\x64\PlatformToolsets') -ErrorAction SilentlyContinue
+          if (-not ($toolsets | Where-Object Name -eq 'v145')) { Write-Warning 'v145 not found at anticipated path; actual MSBuild step will determine availability' }
+          "MSBUILD=$msbuild" >> $env:GITHUB_ENV
+          & $msbuild -version -nologo
+          if ($LASTEXITCODE -ne 0) { throw 'MSBuild version check failed' }
+
+      - name: Compile native DirectXTex library
+        run: |
+          $p = Join-Path (Split-Path $env:GITHUB_WORKSPACE -Parent) 'DirectXTex\DirectXTex\DirectXTex_Desktop_2026.vcxproj'
+          & $env:MSBUILD $p '-t:Restore;Build' '-p:Configuration=Release;Platform=x64' '-m:2' '-v:minimal' '-bl:directxtex.binlog'
+          if ($LASTEXITCODE -ne 0) { throw "DirectXTex build failed: $LASTEXITCODE" }
+          $lib = Join-Path (Split-Path $env:GITHUB_WORKSPACE -Parent) 'DirectXTex\DirectXTex\Bin\Desktop_2026\x64\Release\DirectXTex.lib'
+          if (!(Test-Path $lib)) { throw "Expected DirectXTex.lib not found at $lib" }
+
+      - name: Compile FO4 NPC Manager (Publish x64)
+        run: |
+          & $env:MSBUILD 'FO4_NPC_Manager/FO4_NPC_Manager/NPC_Manager_FO4.vbproj' '-t:Restore;Build' '-p:Configuration=Publish;Platform=x64' '-m:2' '-v:minimal' '-bl:npc-manager.binlog'
+          if ($LASTEXITCODE -ne 0) { throw "NPC Manager build failed: $LASTEXITCODE" }
+
+      - name: Compile FO4 FaceTint CLI (Publish x64)
+        run: |
+          & $env:MSBUILD 'FO4_NPC_Manager/FO4_FaceTint_CLI/FO4_FaceTint_CLI.vbproj' '-t:Restore;Build' '-p:Configuration=Publish;Platform=x64' '-m:2' '-v:minimal' '-bl:facetint-cli.binlog'
+          if ($LASTEXITCODE -ne 0) { throw "FaceTint CLI build failed: $LASTEXITCODE" }
+
+      - name: Collect compiled outputs
+        run: |
+          New-Item -ItemType Directory -Force 'build-output' | Out-Null
+          $project = 'FO4_NPC_Manager/FO4_NPC_Manager/bin/Publish/net8.0-windows/win-x64'
+          if (!(Test-Path $project)) {
+            $candidate = Get-ChildItem 'FO4_NPC_Manager/FO4_NPC_Manager/bin' -Filter 'NPC_Manager_FO4.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (!$candidate) { throw 'Build finished but no GUI executable could be located' }
+            $project = $candidate.Directory.FullName
+          }
+          Copy-Item (Join-Path $project '*') 'build-output' -Recurse -Force
+          $cli = Get-ChildItem 'FO4_NPC_Manager/FO4_FaceTint_CLI/bin' -Filter 'FO4_FaceTint_CLI.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (!$cli) { throw 'FaceTint CLI executable missing' }
+          New-Item -ItemType Directory -Force 'build-output/FaceTint-CLI' | Out-Null
+          Copy-Item (Join-Path $cli.Directory.FullName '*') 'build-output/FaceTint-CLI' -Recurse -Force
+
+      - name: Upload successful compilation for isolated testing
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fo4-npc-manager-windows-x64-UNTESTED
+          path: build-output/
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload diagnostic build logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-build-diagnostics
+          path: "*.binlog"
+          retention-days: 7
+          if-no-files-found: ignore
