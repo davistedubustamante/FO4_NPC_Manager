@@ -90,6 +90,12 @@ es un adaptador de solo lectura y plan de cambios sobre un fixture de plugin FO4
 seguido de round-trip del patch con el lector existente. Después: un solo NPC con bake FaceGen
 y recursos de cuerpo/equipo; finalmente ampliar el lote.
 
+Una condición de aceptación adicional sale del contrato real de `SaveExecutionResult`:
+`Success=True` puede coexistir con `BakeCancelled=True` y un plugin ya escrito sin todo su FaceGen.
+El futuro coordinador debe comprobar también `ChargenSuccess`, cancelación y bundles completos,
+y mantener la salida en staging si falla cualquiera de esas fases. No presentar el éxito del
+escritor de ESP como éxito de la conversión integral.
+
 Voces: conservar VTCK evita sustituirlo sin inventario de diálogo, pero no demuestra compatibilidad.
 Antes de cambiar voz se necesitan INFO/DIAL, condiciones por sexo/raza/voz, aliases/scripts de quests,
 disponibilidad de audio y regresiones de escenas. No se promete conservar todo por cambiar un flag.
@@ -116,7 +122,11 @@ No se ejecutó ni modificó ninguna instalación de juego.
 - Error de compilación VB por `List.Count(predicate)` corregido a la consulta LINQ explícita.
 - 31 aserciones del motor pasan localmente con SDK 8.0.408; reporte JSON experimental generado.
 - Prueba Papyrus existente de sexo del actor: 6 controles para SSE/FO4 pasan; no prueba una conversión.
-- Compilación completa y nueva matriz Windows en CI: pendientes de ejecución para estos cambios.
+- Rama publicada: `dev/npc-transformation-experimental`, primer commit `ca3b55a`.
+- [CI experimental 39182037976](https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39182037976):
+  ambos jobs sintéticos produjeron sus artefactos (Ubuntu y Windows). La compilación Windows
+  completa seguía en curso al registrar esta observación; no se afirma todavía su resultado.
+- Intentar sobrescribir el reporte local existente devuelve código 1 y conserva su SHA-256.
 - FaceGen, ESP real, juego, quests, diálogos, voces, cuerpos y compatibilidad de colección: sin validar.
 
 No hacer merge, publicar releases ni modificar instalaciones de juego sin autorización.
