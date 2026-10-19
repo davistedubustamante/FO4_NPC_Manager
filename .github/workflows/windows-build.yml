@@ -90,9 +90,11 @@ jobs:
           & $env:MSBUILD 'FO4_NPC_Manager/FO4_NPC_Manager/NPC_Manager_FO4.vbproj' '-t:Restore;Build' '-p:Configuration=Publish;Platform=x64' '-m:2' '-v:minimal' '-bl:npc-manager.binlog'
           if ($LASTEXITCODE -ne 0) { throw "NPC Manager build failed: $LASTEXITCODE" }
 
-      - name: Compile FO4 FaceTint CLI (Publish x64)
+      # FaceTint CLI projects reference native C++/CLI sources that have Release|x64
+      # but no Publish|x64 configuration. GUI compilation above still uses Publish.
+      - name: Compile FO4 FaceTint CLI (Release x64)
         run: |
-          & $env:MSBUILD 'FO4_NPC_Manager/FO4_FaceTint_CLI/FO4_FaceTint_CLI.vbproj' '-t:Restore;Build' '-p:Configuration=Publish;Platform=x64' '-m:2' '-v:minimal' '-bl:facetint-cli.binlog'
+          & $env:MSBUILD 'FO4_NPC_Manager/FO4_FaceTint_CLI/FO4_FaceTint_CLI.vbproj' '-t:Restore;Build' '-p:Configuration=Release;Platform=x64' '-m:2' '-v:minimal' '-bl:facetint-cli.binlog'
           if ($LASTEXITCODE -ne 0) { throw "FaceTint CLI build failed: $LASTEXITCODE" }
 
       - name: Collect compiled outputs
