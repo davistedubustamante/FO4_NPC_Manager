@@ -324,7 +324,7 @@ Module Program
         campaign.Policy.HumanRaces.Add("FIXTURE.ESM|000801")
         campaign.Policy.AdultEvidence.Add("FIXTURE.ESM|000800", "controlled adult")
         Dim report = NarrativeDependencies.Analyze(campaign)
-        Check(report.Edges.Any(Function(e) e.Signature = "QUST" AndAlso e.Target = "FIXTURE.ESM|000800" AndAlso e.Field.Contains("ALUA")), "original canonical walker discovers quest unique-actor alias reference")
+        Check(report.Edges.Any(Function(e) e.Signature = "QUST" AndAlso e.Target = "FIXTURE.ESM|000800" AndAlso e.Subrecord = "ALUA"), "original canonical walker discovers quest unique-actor alias reference")
         Check(report.Edges.Any(Function(e) e.Signature = "SCEN" AndAlso e.Target = "NARRATIVE.ESP|000800"), "original canonical walker discovers scene quest dependency")
         Check(report.Edges.Any(Function(e) e.Signature = "RELA" AndAlso e.Target = "FIXTURE.ESM|000800"), "original canonical walker discovers relationship actor references")
         Check(report.Npcs.Single().Upstream.Contains("NARRATIVE.ESP|000801") AndAlso report.Npcs.Single().ReviewRequired, "reverse transitive analysis requires review for quest-linked generic NPC")
@@ -333,6 +333,15 @@ Module Program
         Dim reportPath = Path.Combine(root, "narrative-report.json")
         GlobalNpcDiscovery.WriteNarrativeReport(campaign, report, reportPath)
         Reject(Sub() GlobalNpcDiscovery.WriteNarrativeReport(campaign, report, reportPath), "narrative report cannot overwrite prior evidence")
+    End Sub
+
+    Private Sub UnmodeledRecordChecks(root As String)
+        Dim data = Directory.CreateDirectory(Path.Combine(root, "unmodeled-inputs")).FullName
+        Fixture(data, genericHuman:=True)
+        RewriteFixture(data, Function(record) If(record.Header.Signature = "NPC_", RecordBytes(record).Concat(Sr("ZZZZ", BitConverter.GetBytes(&H1000802UI))).ToArray(), RecordBytes(record)))
+        Dim output = Path.Combine(root, "unmodeled-output")
+        Reject(Sub() WriteRecordOnlyPatch(data, {"Fallout4.esm", "Fixture.esm"}, "Fixture.esm", &H800UI, output, AgeEvidence.Adult, "controlled adult"), "opaque unknown NPC field cannot masquerade as proven global reference preservation", "canonical parse findings")
+        Check(Not Directory.Exists(output), "unreviewed canonical input produces no patch directory")
     End Sub
 
     Function Main(args As String()) As Integer
@@ -550,6 +559,7 @@ Module Program
             LocalizationChecks(root)
             TraitsChecks(root)
             NarrativeChecks(root)
+            UnmodeledRecordChecks(root)
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0

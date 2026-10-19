@@ -20,6 +20,7 @@ Namespace ExperimentalTransformation
                     Dim raw = pm.GetRecord(candidate.FormID)
                     If raw Is Nothing OrElse raw.Header.IsDeleted OrElse raw.Header.Signature <> "NPC_" Then Throw New InvalidDataException("Missing or deleted Traits source.")
                     If raw.Subrecords.Where(Function(part) part.Signature = "TPLT").Count() > 1 OrElse raw.Subrecords.Where(Function(part) part.Signature = "TPTA").Count() > 1 Then Throw New InvalidDataException("Ambiguous duplicate template pointer blocks.")
+                    IsolatedNpcPatch.ValidateParsedNpc(candidate)
                     If NpcTemplateHelpers.HasTemplateFlag(candidate.Record.ConfigurationTemplateFlags, NPC_TemplateCategory.Traits) Then
                         Dim pointer = NpcTemplateHelpers.ResolveTemplateSourceFormID(candidate, NPC_TemplateCategory.Traits)
                         Dim source = pm.GetRecord(pointer)

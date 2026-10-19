@@ -9,6 +9,7 @@ Namespace ExperimentalTransformation
         Public Property Target As String = ""
         Public Property Signature As String = ""
         Public Property Field As String = ""
+        Public Property Subrecord As String = ""
         Public Property TargetOutsideScannedView As Boolean
         Public Property TargetDeleted As Boolean
     End Class
@@ -62,8 +63,13 @@ Namespace ExperimentalTransformation
                                 If fid = 0UI Then Continue For
                                 If report.Edges.Count >= maxEdges Then Throw New IOException("Narrative edge budget exceeded.")
                                 Dim target = pm.GetRecord(fid)
+                                Dim owner = node
+                                While owner IsNot Nothing AndAlso String.IsNullOrEmpty(owner.Signature)
+                                    owner = owner.Parent
+                                End While
+                                Dim subSignature = If(owner Is Nothing, "", owner.Signature)
                                 report.Edges.Add(New NarrativeEdge With {.Source = source, .Target = Identity(pm, fid), .Signature = raw.Header.Signature,
-                                    .Field = node.Path, .TargetOutsideScannedView = target Is Nothing, .TargetDeleted = target IsNot Nothing AndAlso target.Header.IsDeleted})
+                                    .Field = node.Path, .Subrecord = subSignature, .TargetOutsideScannedView = target Is Nothing, .TargetDeleted = target IsNot Nothing AndAlso target.Header.IsDeleted})
                             Next
                         Catch ex As IOException
                             Throw

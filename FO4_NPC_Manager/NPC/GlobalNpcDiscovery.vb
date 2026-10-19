@@ -78,6 +78,7 @@ Namespace ExperimentalTransformation
                         If npc Is Nothing OrElse Not npc.Record.ConfigurationFlagsPresente Then Throw New InvalidDataException("Incomplete NPC.")
                         item.OriginalTemplateFlags = npc.Record.ConfigurationTemplateFlags
                         npc = StrictTraitsMaterialization.Materialize(npc, pm)
+                        IsolatedNpcPatch.ValidateParsedNpc(npc)
                         If Not npc.Record.RacePresente Then Throw New InvalidDataException("Missing effective NPC race.")
                         item.TraitsMaterialized = item.OriginalTemplateFlags <> 0US
                         If raw.SourcePluginIsLocalized AndAlso input.Localization IsNot Nothing Then

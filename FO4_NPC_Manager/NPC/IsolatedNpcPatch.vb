@@ -71,9 +71,10 @@ Namespace ExperimentalTransformation
             If raw Is Nothing OrElse raw.Header.Signature <> "NPC_" OrElse raw.Header.IsDeleted Then Throw New InvalidOperationException("Expected a live NPC_ record.")
             Dim npc = RecordParsers.ParseNPC(raw, pm)
             If npc Is Nothing OrElse Not npc.Record.ConfigurationFlagsPresente Then Throw New InvalidOperationException("Incomplete NPC record.")
-            Dim stringAudit = LocalizedExportScope.Audit(npc)
             Dim inheritedTraits = npc.Record.ConfigurationTemplateFlags <> 0US
             npc = StrictTraitsMaterialization.Materialize(npc, pm)
+            ValidateParsedNpc(npc)
+            Dim stringAudit = LocalizedExportScope.Audit(npc)
             If Not npc.Record.RacePresente Then Throw New InvalidDataException("NPC has no effective race.")
             Dim raceRecord = pm.GetRecord(npc.Record.Race)
             If raceRecord Is Nothing OrElse raceRecord.Header.Signature <> "RACE" OrElse raceRecord.Header.IsDeleted Then Throw New InvalidOperationException("Missing or deleted NPC race.")
@@ -160,6 +161,12 @@ Namespace ExperimentalTransformation
             Return patch
             End Using
         End Function
+
+        Friend Sub ValidateParsedNpc(npc As NPC_Data)
+            Dim view = TryCast(npc.Record, Canon.CanonView)
+            If view Is Nothing OrElse view.Context Is Nothing Then Throw New InvalidDataException("Missing canonical NPC parse context.")
+            If view.Context.Findings.Count <> 0 Then Throw New InvalidDataException("Unreviewed canonical parse findings prevent safe reference remapping: " & String.Join("; ", view.Context.Findings.Select(Function(f) f.ToString())))
+        End Sub
 
         Friend Sub ValidateAppearancePreset(preset As LooksmenuLoader.LooksmenuPreset)
             If preset Is Nothing OrElse Not preset.HasGender OrElse preset.Gender <> 1 Then Throw New InvalidOperationException("Explicit female preset required.")
