@@ -65,7 +65,7 @@ jobs:
         with:
           name: EXPERIMENTAL-synthetic-transformation-${{ matrix.os }}
           path: Tools/AdultTransformationGate/experimental-synthetic-report.json
-          retention-days: 7
+          retention-days: 2
           if-no-files-found: error
 
   build:
@@ -172,10 +172,16 @@ jobs:
           & $cli.FullName (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/cli-profile.json') (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip') *>&1 | Tee-Object -FilePath conversion-run.log
           if ($LASTEXITCODE -ne 0) { throw "Conversion CLI fixture failed: $LASTEXITCODE" }
 
+      - name: Exercise global discovery CLI on winning binary records
+        run: |
+          $cli = Get-ChildItem 'FO4_NPC_Manager/Tools/NpcConversionCli/bin' -Filter 'NpcConversionCli.exe' -Recurse | Select-Object -First 1
+          & $cli.FullName --discover (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/campaign-profile.json') (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/global-cli-inventory.json') *>&1 | Tee-Object -FilePath discovery-run.log
+          if ($LASTEXITCODE -ne 0) { throw "Discovery CLI fixture failed: $LASTEXITCODE" }
+
       - name: Expose fixture gate diagnosis in job summary
         if: always()
         run: |
-          foreach ($log in @('npc-manager-build.log', 'roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log', 'conversion-run.log')) {
+          foreach ($log in @('npc-manager-build.log', 'roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log', 'conversion-run.log', 'discovery-run.log')) {
             if (Test-Path $log) {
               "### $log" >> $env:GITHUB_STEP_SUMMARY
               '```text' >> $env:GITHUB_STEP_SUMMARY
@@ -189,13 +195,18 @@ jobs:
             }
           }
 
+      - name: Bound generated fixture artifact size
+        run: |
+          $bytes = (Get-ChildItem (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip') -Recurse -File | Measure-Object Length -Sum).Sum
+          if ($bytes -gt 16MB) { throw "Fixture artifact exceeds 16 MiB: $bytes" }
+
       - name: Upload experimental binary fixture evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: EXPERIMENTAL-NPC-ESP-roundtrip-NOT-GAME-VALIDATED
           path: ${{ runner.temp }}/fo4-roundtrip/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 2
 
       - name: Collect compiled outputs
         run: |
@@ -243,25 +254,42 @@ jobs:
             "$hash  $relative"
           } | Set-Content 'build-output/SHA256SUMS.txt'
 
+      - name: Enforce experimental artifact storage budget
+        run: |
+          $bytes = (Get-ChildItem 'build-output' -Recurse -File | Measure-Object Length -Sum).Sum
+          $fixtureBytes = (Get-ChildItem (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip') -Recurse -File | Measure-Object Length -Sum).Sum
+          if ($bytes + $fixtureBytes + 16MB -gt 256MB) { throw "Experimental artifact budget exceeded: $($bytes + $fixtureBytes) bytes" }
+          Write-Host "Experimental binary/fixture payload: $($bytes + $fixtureBytes) bytes; limit 256 MiB"
+
       - name: Upload successful compilation for isolated testing
         if: success()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: fo4-npc-manager-windows-x64-UNTESTED
           path: build-output/
-          retention-days: 7
+          retention-days: 2
           if-no-files-found: error
+
+      - name: Collect diagnostics within a 16 MiB budget
+        if: always()
+        run: |
+          New-Item -ItemType Directory -Force 'diagnostic-output' | Out-Null
+          $used = 0L
+          $skipped = @()
+          $logs = Get-ChildItem -File | Where-Object { $_.Extension -in '.log', '.binlog' } | Sort-Object @{Expression={if ($_.Extension -eq '.log') {0} else {1}}}, Name
+          foreach ($log in $logs) {
+            if ($used + $log.Length -le (16MB - 4096)) {
+              Copy-Item $log.FullName 'diagnostic-output'
+              $used += $log.Length
+            } else { $skipped += $log.Name }
+          }
+          "Skipped oversized diagnostics (original runner files retained until cleanup): $($skipped -join ', ')" | Set-Content 'diagnostic-output/storage-budget.txt'
 
       - name: Upload diagnostic build logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: windows-build-diagnostics
-          path: |
-            *.binlog
-            roundtrip-*.log
-            conversion-build.log
-            conversion-run.log
-            npc-manager-build.log
-          retention-days: 7
+          path: diagnostic-output/
+          retention-days: 2
           if-no-files-found: ignore

@@ -188,6 +188,55 @@
         "Windows real-reader/writer cases verify NPC identity, nonempty VMAD, voice and unaffected inherited categories",
         "Real asset and game validation remain separate"
       ]
+    },
+    {
+      "id": "R12",
+      "requirement": "Global winning NPC discovery, conservative classification and deterministic campaign pages",
+      "status": "in_progress",
+      "dependsOn": [
+        "R09"
+      ],
+      "evidence": [
+        "Local planner: 20 assertions on 10000 rows; Windows real-reader discovery validation pending"
+      ],
+      "acceptance": [
+        "Original loader resolves winning overrides and ESL identities; lineage and masters reported",
+        "Generic adult priority; child/unknown blocked; unique/companion/special review and robot/creature routes distinct",
+        "Deterministic preset/page selection and stale-plan rejection feed original batch contracts",
+        "Hard metadata byte limits and pre-load input/count bounds verified; no asset duplication",
+        "Windows discovery CLI and production regression pass"
+      ]
+    },
+    {
+      "id": "R13",
+      "requirement": "Quota-enforced resumable global execution over thousands of NPC",
+      "status": "pending",
+      "dependsOn": [
+        "R12",
+        "R10"
+      ],
+      "evidence": [],
+      "acceptance": [
+        "Campaign/page journal, sequential bounded resource worker and verified resume",
+        "Hard storage enforcement for writer and FaceGen before enabling automatic writes",
+        "Real generated bundles, quota exhaustion and recovery verified in isolated Windows profile",
+        "Coverage distinguishes planned, blocked, record-only, FaceGen and game validated"
+      ]
+    },
+    {
+      "id": "R14",
+      "requirement": "Global narrative dependencies and special-category redesign admission",
+      "status": "pending",
+      "dependsOn": [
+        "R12"
+      ],
+      "evidence": [],
+      "acceptance": [
+        "Original record APIs build quest/alias/scene/relationship/script/voice impact graph",
+        "Unique and companion transformations require individual regression evidence",
+        "Robot/creature redesign requires rig/assets/gameplay evidence; no superficial success",
+        "Child or unknown age remains blocked until adult redesign verified"
+      ]
     }
   ]
 }

@@ -3,6 +3,9 @@
 Branch: dev/npc-transformation-experimental. Baseline preserved: d09860b.
 Latest runtime-verified code: 74289ec (production batch/preset/aggregate/CLI/ESL fixture scope). No recurring scheduler is active.
 
+## Current scope expansion: global Fallout 4 GOTY + DLC + active WoD
+Preserve 74289ec and all later verified documentation. Selected R12: original-loader global NPC discovery, winning override lineage, conservative category routing, reviewed adult generic priority and deterministic small pages. GLOBAL_CONVERTER.md records architecture, storage limits and missing local evidence. Local planner tests exercise 10,000 entries; Windows regression/discovery validation pending current revision. R13 execution and R14 narrative/special redesign are separate requirements, not claimed by planning. No Lite-mod dependency, asset upload/duplication, installation or merge.
+
 ## Completed engineering iteration (fixture scope)
 - R01 verified: AGENTS, requirement DAG, blockers, evidence and resume instructions in Git; lightweight records CI passes.
 - R02 verified on generated binary fixtures: load an NPC_ with the pinned library, write an isolated record-only ESP, reopen, resolve cleaned-master indexes, compare canonical global-FormID content, preserve headers/subrecord structure and input hashes. 21 assertions passed in Windows CI.

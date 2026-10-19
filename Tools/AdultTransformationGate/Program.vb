@@ -93,10 +93,12 @@ Module Program
             Dim restored = JsonSerializer.Deserialize(Of SyntheticBatch)(first)
             Check(restored.Changes(0).Transformed.Preserved("VMAD") = male.Preserved("VMAD") AndAlso
                   restored.Changes(1).Transformed Is Nothing, "report round-trip preserves data and rejected status")
+            Dim campaignChecks = GlobalCampaignTests.Run()
+            Console.WriteLine($"{campaignChecks} global campaign assertions passed")
             Dim recoveryChecks = BatchJournalTests.Run()
             Console.WriteLine($"{recoveryChecks} batch journal assertions passed")
             Dim report = TransformSynthetic({male, child, unknown, inherited, otherRace, female}, profile)
-            Dim json = JsonSerializer.Serialize(New With {.schemaVersion = 1, .checksPassed = checks, .recoveryChecksPassed = recoveryChecks, .batch = report}, New JsonSerializerOptions With {.WriteIndented = True})
+            Dim json = JsonSerializer.Serialize(New With {.schemaVersion = 1, .checksPassed = checks, .campaignChecksPassed = campaignChecks, .recoveryChecksPassed = recoveryChecks, .batch = report}, New JsonSerializerOptions With {.WriteIndented = True})
             ' Never overwrite an existing report, and never write a plugin or game asset.
             Using output As New FileStream(args(0), FileMode.CreateNew, FileAccess.Write)
                 Using writer As New StreamWriter(output)

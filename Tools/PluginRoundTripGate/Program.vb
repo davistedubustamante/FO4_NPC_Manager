@@ -172,6 +172,34 @@ Module Program
             Reject(Sub() WriteRecordOnlyPatch(lightData, order, "Fixture.esm", &H100800UI, Path.Combine(root, "light-alias"), AgeEvidence.Adult, "fixture"), "oversized ESL object ID cannot alias another NPC")
             Reject(Sub() WriteAppearancePatch(lightData, order, "Fixture.esm", &H800UI, Path.Combine(root, "light-race-alias"), AgeEvidence.Adult,
                 "fixture", presetPath, "Fixture.esm", &H100801UI), "oversized ESL race identity cannot alias approval")
+            ' Real loader/winning-override inventory, including an inactive file not named in load order.
+            Dim baseReader As New PluginReader() : baseReader.Load(Path.Combine(multiData, "Fixture.esm"))
+            Dim baseNpc = baseReader.Records.Values.First(Function(r) r.Header.Signature = "NPC_")
+            Dim overrideBody = baseNpc.Subrecords.SelectMany(Function(sr) Sr(sr.Signature, sr.Data)).ToArray()
+            Dim lateHeader = GenericPluginWriter.BuildTes4Header(Config_App.Game_Enum.Fallout4, False, False, New List(Of String) From {"Fixture.esm"}, 2, &H800UI, "fixture override", False)
+            Dim lateRecord = GenericPluginWriter.WrapRecord("NPC_", overrideBody, 0UI, &H800UI, 0UI, 0US, Config_App.Game_Enum.Fallout4)
+            File.WriteAllBytes(Path.Combine(multiData, "Late.esp"), lateHeader.Concat(GenericPluginWriter.BuildGrup("NPC_", New List(Of Byte()) From {lateRecord})).ToArray())
+            Dim campaign As New CampaignInput With {.DataRoot = multiData, .LoadOrder = order.Concat({"Late.esp"}).ToList(), .ProtectedRoots = New List(Of String) From {multiData}}
+            Dim discovered = GlobalNpcDiscovery.Scan(campaign)
+            Check(discovered.Decisions.Count = 2, "global discovery emits one winning row per NPC")
+            Dim lateWinner = discovered.Decisions.Single(Function(d) d.Npc.ObjectId = &H800UI)
+            Check(lateWinner.Npc.Origin = "Fixture.esm" AndAlso lateWinner.Npc.Winner = "Late.esp", "origin and winning override distinguished")
+            Check(lateWinner.Npc.OverrideChain.SequenceEqual({"Fixture.esm", "Late.esp"}), "override chain follows actual load order")
+            Check(discovered.Pages.Count = 0 AndAlso discovered.Status = "EXPERIMENTAL-PLAN-NOT-CONVERTED", "unknown adulthood never scheduled")
+            Check(GlobalNpcDiscovery.Scan(campaign).PlanSha256 = discovered.PlanSha256, "unchanged real input produces deterministic discovery plan")
+            Dim planPath = Path.Combine(root, "global-inventory.json")
+            GlobalNpcDiscovery.WriteReport(campaign, discovered, planPath)
+            Check(File.Exists(planPath), "bounded global report exported outside originals")
+            Reject(Sub() GlobalNpcDiscovery.WriteReport(campaign, discovered, planPath), "existing global report never overwritten")
+            Reject(Sub() GlobalNpcDiscovery.WriteReport(campaign, discovered, Path.Combine(multiData, "report.json")), "global report cannot write to input root")
+            campaign.Policy.MaxReportBytes = 1
+            Reject(Sub() GlobalNpcDiscovery.WriteReport(campaign, discovered, Path.Combine(root, "over-budget.json")), "report byte budget blocks output")
+            Check(Not File.Exists(Path.Combine(root, "over-budget.json")), "budget rejection leaves no report")
+            campaign.Policy.MaxReportBytes = 16L * 1024 * 1024
+            campaign.Policy.MaxPluginBytes = 1
+            Reject(Sub() GlobalNpcDiscovery.Scan(campaign), "plugin input budget checked before parsing")
+            campaign.Policy.MaxPluginBytes = 4L * 1024 * 1024 * 1024
+            File.WriteAllText(Path.Combine(root, "campaign-profile.json"), JsonSerializer.Serialize(campaign))
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0
