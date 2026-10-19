@@ -45,3 +45,23 @@ Build with MSBuild, configuration `Publish`:
 ```
 msbuild FO4_NPC_Manager/NPC_Manager_FO4.vbproj -t:Restore,Build -p:Configuration=Publish -p:Platform=x64
 ```
+
+The pinned Windows build and synthetic checks run in
+[GitHub Actions](.github/workflows/windows-build.yml). The GUI uses `Publish|x64`;
+the FaceTint CLI uses `Release|x64` for its native dependencies.
+
+## Experimental adult NPC transformation
+
+The first transformation engine operates on small **synthetic** batches only. It does
+not write game patches or generate FaceGen. See the
+[implementation, validation and compatibility notes](docs/experimental-adult-transformation.md).
+
+To run its assertions with .NET SDK 8.0.408, use a new output filename:
+
+```text
+cd Tools/AdultTransformationGate
+dotnet run --configuration Release -- experimental-report.json
+```
+
+Outputs remain experimental until real plugin, FaceGen, dialogue, quest and collection
+compatibility checks pass. No game installation is required for these synthetic checks.
