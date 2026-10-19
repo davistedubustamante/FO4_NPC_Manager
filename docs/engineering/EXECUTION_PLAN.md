@@ -1,7 +1,7 @@
 # Persistent execution plan
 
 Branch: dev/npc-transformation-experimental. Baseline preserved: d09860b.
-Latest runtime-verified code: 9adb4a6 (production batch/preset/aggregate/CLI fixture scope). No recurring scheduler is active.
+Latest runtime-verified code: 74289ec (production batch/preset/aggregate/CLI/ESL fixture scope). No recurring scheduler is active.
 
 ## Completed engineering iteration (fixture scope)
 - R01 verified: AGENTS, requirement DAG, blockers, evidence and resume instructions in Git; lightweight records CI passes.
@@ -10,11 +10,19 @@ Latest runtime-verified code: 9adb4a6 (production batch/preset/aggregate/CLI fix
 - R04 prepared and inactive: reusable prompt, proposed schedule and advisory budgets; no callable Codex scheduler in this session and no activation performed.
 - Full native/GUI Publish|x64/CLI Release|x64/integration-gate build passed at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615511 (a0bf328).
 
-## Completed production integration: R09 and R10 (binary-fixture scope)
+## Verified production records: R09 integration and R10 ESP milestone (binary-fixture scope)
 9adb4a6 passed full Windows CI at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39259948641: 37 integration assertions plus actual two-NPC CLI execution. Original reader, override applier, preset parser/filter, save shadow, ESP writer and FaceGen entry point are reused. Mixed failures, partial attempts, hash-sealed resume and one aggregate ESP are implemented. See PRODUCTION_INTEGRATION.md for APIs and evidence boundaries. Positive real FaceGen remains blocked, not certified by these checks.
 
-## Current selected hardening: ESL identity validation
-The original library masks light-plugin object IDs to 12 bits. Reject oversized NPC/race IDs before lookup; add positive ESL appearance readback and negative alias tests. Final bounded Windows execution pending the next code revision. Portable baseline 31 and journal 21 assertions pass locally. Preserve the successful 9adb4a6 checkpoint if the final validation exposes a new issue.
+## Completed ESL hardening — 74289ec
+Full Windows CI passed: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287. 40 mandatory production assertions and actual two-NPC CLI execution succeeded, including positive ESL appearance readback and negative truncated NPC/race IDs. Pipeline v3 identity rejects pre-guard journals. Portable baseline 31 and journal 21 passed in both matrix jobs; inspector Windows 20 passed, Linux 19 passed plus one platform skip. Dependency pins/licenses remain intact.
+
+Four actual production gate executions were used (two diagnosed failures, aggregate success, final ESL success). One intermediate workflow was cancelled during GUI compilation before the gate started because the pipeline identity needed invalidation. Do not run another unchanged full Windows build in this session. Documentation-only updates use the records workflow.
+
+## First unverified export check: R10 resource-copy/conflict branch
+The record-only two-NPC aggregate is verified. The branch that copies generated resources and rejects shared-path conflicts is compiled, but was not executed by those record-only fixtures. Keep R10 in_progress. Add controlled staging-copy tests using checkpointed generated files (copy/hash semantics only, not fake NIF validation), then require actual FaceGen resources for the complete bundle acceptance in R06.
+
+## Next independent implementation: R11 — inherited Traits
+Use the original chain resolver and frozen materializer to remove the current blanket template rejection safely. Start with explicit adult-human evidence and actual reader/writer fixtures including nonempty VMAD. Preserve voice and other inherited-category semantics; unresolved/cyclic chains stay excluded. This work is independent of inspector output and does not require uploading collection assets.
 
 ## Next feasible work and real-input acceptance
 The inspector is not a development gate. Next implementation work includes frozen inherited-category resolutions through the existing materializer, candidate/profile discovery using the existing reader, and content fingerprints for referenced resources. Real acceptance needs one authorized adult human NPC and licensed local resources in a frozen separate Windows profile: staged ESP + NIF/DDS, then body/equipment and quest/dialogue regressions. R05–R08 remain blocked on their actual inputs/evidence, not on further code development. No collection upload or original installation/save mutation is required.

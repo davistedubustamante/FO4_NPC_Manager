@@ -28,7 +28,8 @@
         "BINARY FIXTURE ONLY: existing reader -> existing writer -> existing reader, 21 gate assertions passed at a0bf328",
         "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615511",
         "Master cleanup verified in global FormID space; NPC/race/voice identity, headers, subrecord structure and source hashes preserved",
-        "No in-game, real collection, nonempty quest-script or FaceGen validation implied"
+        "No in-game, real collection, nonempty quest-script or FaceGen validation implied",
+        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 \u2014 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only."
       ],
       "acceptance": [
         "Generate structurally valid NPC_ fixture with required fields",
@@ -138,7 +139,8 @@
       "evidence": [
         "BINARY FIXTURE SCOPE ONLY: 37 production integration assertions and actual two-NPC conversion CLI execution passed at 9adb4a6",
         "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39259948641",
-        "No real FaceGen, playable collection, body/voice/quest or in-game certification implied"
+        "No real FaceGen, playable collection, body/voice/quest or in-game certification implied",
+        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 \u2014 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only."
       ],
       "acceptance": [
         "Reuse original preset parser/category filter/save shadow/overlay/writer and FaceGen generator",
@@ -151,14 +153,16 @@
     {
       "id": "R10",
       "requirement": "Consolidate verified batch into one isolated ESP and generated resource bundle",
-      "status": "verified",
+      "status": "in_progress",
       "dependsOn": [
         "R09"
       ],
       "evidence": [
         "BINARY FIXTURE SCOPE ONLY: 37 production integration assertions and actual two-NPC conversion CLI execution passed at 9adb4a6",
         "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39259948641",
-        "No real FaceGen, playable collection, body/voice/quest or in-game certification implied"
+        "No real FaceGen, playable collection, body/voice/quest or in-game certification implied",
+        "ESP milestone verified; generated-resource copy/conflict branches are compiled but not exercised by record-only fixtures. Resource bundle acceptance remains pending.",
+        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 \u2014 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only."
       ],
       "acceptance": [
         "Reuse original multientry ESP writer, never a second serializer",
@@ -166,6 +170,23 @@
         "Copy only checkpointed generated resources; reject conflicts",
         "Incomplete target blocks aggregate; resume verifies aggregate hashes",
         "Dedicated CLI exercises the two-NPC fixture in Windows CI"
+      ]
+    },
+    {
+      "id": "R11",
+      "requirement": "Admit inherited Traits through original frozen resolver/materializer",
+      "status": "pending",
+      "dependsOn": [
+        "R02",
+        "R09"
+      ],
+      "evidence": [],
+      "acceptance": [
+        "Reuse existing chain resolver and NpcTemplateMaterializer; no parallel parser or inheritance implementation",
+        "Freeze explicit Traits resolution and apply original materialize -> overlay -> scalar save order",
+        "Missing/cyclic/unresolved templates and unknown adulthood remain excluded",
+        "Windows real-reader/writer cases verify NPC identity, nonempty VMAD, voice and unaffected inherited categories",
+        "Real asset and game validation remain separate"
       ]
     }
   ]

@@ -76,3 +76,25 @@
 - b6f62ca started https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261034700. During review, found that reusing the v2 pipeline seal would let a checkpoint created before the ESL guard skip that new guard on resume.
 - Bumped the sealed identity to `production-batch-v3-esl-identity`. Old staging is retained but cannot resume across the changed admission rules. No migration or deletion.
 - The replaced run had not started the production integration gate when superseded. Existing workflow concurrency cancels it on push; the next run is the fourth actual integration-gate execution, not an unchanged retry after the cap. Successful checkpoint 9adb4a6 remains preserved.
+
+### Published artifact metadata review at 9adb4a6
+The public successful run lists the following artifacts. These are GitHub's published archive digests, not a separately downloaded/rehashed archive in the cloud workspace; runner-side license/provenance/SHA256 checks passed before upload.
+
+| Artifact | Public size | Published archive SHA256 |
+|---|---|---|
+| fo4-npc-manager-windows-x64-UNTESTED | 42.2 MB | 49a9aa637d198168859961cfb880b838d023d53ea87e5b2bfdc89af1f1519113 |
+| EXPERIMENTAL-NPC-ESP-roundtrip-NOT-GAME-VALIDATED | 20.1 KB | d2f5ae97a18449600e9364d5153073ec187ef4c59460172358659d5cc454b963 |
+| windows-build-diagnostics | 5.76 MB | 8d442ea16af7a9783f50ffb635f1fee4bdbba4a597b7ce6ad74aaf122e305f43 |
+
+The fixture artifact contains generated placeholder masters and is never installable. The build archive includes the experimental conversion CLI with original application/dependency/license outputs; no proprietary collection resources were packaged.
+
+### Coverage boundary clarified
+R10 remains in_progress: the aggregate ESP path and resume checks passed on generated NPC records, but generated-resource copy/conflict branches only compiled because positive FaceGen resources were unavailable and the successful profile requested record-only export. They must receive their own controlled staging-copy tests and real FaceGen bundle evidence. R09's integration evidence does not certify positive FaceGen; R06 remains blocked on actual assets. No requirement is considered complete from compiling a branch alone.
+
+## Latest verified production code — 74289ec
+- Full Windows CI **Success**: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287. Native, GUI Publish|x64, original CLI Release|x64, production gate, new CLI build and two-NPC executable invocation passed. Experimental fixture/build artifacts were published and license/provenance/SHA256 checks passed.
+- Production gate: 40 mandatory assertions, including positive ESL appearance serialization/global identity and rejection of oversized light-plugin NPC/race IDs. Original reader/writer/override/preset functions are exercised, not replacement implementations. v3 pipeline seal prevents pre-guard checkpoint reuse.
+- Portable gates: baseline 31 + journal 21 passed on Linux and Windows. Inspector: Windows 20 passed; Linux 19 passed, one Windows-only skipped. All fixture/plugin/preset/test data generated; no licensed collection resources uploaded.
+- https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261034700 was Cancelled during GUI compilation before the production gate; the replacement run is the fourth actual gate execution. No fifth execution of that step and no unchanged rerun.
+- Limits: positive FaceGen NIF/DDS, generated-resource copy/conflict branch, body/equipment, inherited templates, nonempty quest VMAD, dialogue and real collection/game regressions are not certified. R10 stays in_progress for resource-copy coverage; R06 remains blocked for real FaceGen. Next independent requirement R11 persists for original inherited-Traits materialization.
+- No merge, release, game/save edits, original installation changes, paid-service enablement or recurring automation activation. Remaining input requirement: licensed locally available assets plus an authorized frozen separate Windows profile and reviewed CRU/WoD/runtime versions. Keep original plugins/archives/saves/private profiles local.
