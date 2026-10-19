@@ -36,3 +36,16 @@ filesystem race. Large inventories stream JSONL; BA2 count/header limits make co
 
 Tests: `python -B -m unittest discover -s Tools/WoDInspector -v`. Fixtures are generated, not game assets;
 Windows tests use real directory junctions to check reparse handling.
+
+## Global converter profile bridge (separate from CRU-Female-Lite)
+
+Run in the existing isolated Windows resource view (including an already configured mod-manager VFS if applicable). These tools do not configure/install a VFS, touch saves or copy game assets. Never point them at `D:\CRU-Female-Lite`. Profiles, absolute paths, plugin/resource names and reports remain private/local.
+
+1. Use `Inspect-WoD.ps1` as above for metadata/resource-name inventory. It does not extract BA2 contents.
+2. Prepare an explicit-language profile from an existing campaign JSON and the selected loose string-table view:
+   `python prepare_local_profile.py --profile C:\NpcWork\campaign.private.json --language spanish --output C:\NpcWork\campaign-spanish.private.json`
+   Optional `--table-root` selects an existing isolated loose-table view. Only matching plugin/language/kind files are hashed. No files are copied. Missing language resources, unknown masters and `.cpoverride` fail closed; BA2-only tables remain a blocker for this bridge. This helper validates metadata/provenance, not string payload correctness; the original VB reader/export gate validates payloads.
+3. Use the existing compiled experimental `NpcConversionCli.exe` with a recorded SHA256. `Invoke-GlobalNpc.ps1 -Task Discover -CliPath C:\NpcTool\NpcConversionCli.exe -CliSha256 <sha256> -ProfilePath C:\NpcWork\campaign-spanish.private.json -OutputPath C:\NpcWork\inventory.private.json` invokes the original loader directly on the profile's DataRoot.
+4. `-Task AnalyzeNarrative` writes bounded static reference impact, never a claim of quest compatibility. `StartPreparation` requires `-PlanPath`, new `-StagingDirectory` and explicit `-BudgetBytes`; `NextPreparation` prepares one sequential page per call. `PausePreparation` / `ResumePreparation` persist preparation state.
+
+Preparation is metadata only: no global ESP/FaceGen execution is enabled. Its durable byte reservations control its own files before writes, retain interrupted-attempt charges and reject exhausted budgets. They are not a quota for the original ESP/FaceGen direct-path writers. Real collection trials require the separately authorized Windows profile, real assets and game regression evidence; do not upload the collection.

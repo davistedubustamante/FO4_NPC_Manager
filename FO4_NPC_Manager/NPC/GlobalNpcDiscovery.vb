@@ -75,7 +75,11 @@ Namespace ExperimentalTransformation
                     If item.Deleted Then Continue For
                     Try
                         Dim npc = RecordParsers.ParseNPC(raw, pm)
-                        If npc Is Nothing OrElse Not npc.Record.ConfigurationFlagsPresente OrElse Not npc.Record.RacePresente Then Throw New InvalidDataException("Incomplete NPC.")
+                        If npc Is Nothing OrElse Not npc.Record.ConfigurationFlagsPresente Then Throw New InvalidDataException("Incomplete NPC.")
+                        item.OriginalTemplateFlags = npc.Record.ConfigurationTemplateFlags
+                        npc = StrictTraitsMaterialization.Materialize(npc, pm)
+                        If Not npc.Record.RacePresente Then Throw New InvalidDataException("Missing effective NPC race.")
+                        item.TraitsMaterialized = item.OriginalTemplateFlags <> 0US
                         If raw.SourcePluginIsLocalized AndAlso input.Localization IsNot Nothing Then
                             Dim warnings As New List(Of String)
                             SaveNpcEspWriter.CuerpoDeNpcSobrescrito(npc, Function(x) x, input.LoadOrder.Count, warnings)
@@ -122,6 +126,9 @@ Namespace ExperimentalTransformation
         End Sub
         Public Sub WriteReport(input As CampaignInput, plan As CampaignPlan, outputPath As String)
             WriteBounded(input, plan, outputPath)
+        End Sub
+        Public Sub WriteNarrativeReport(input As CampaignInput, report As NarrativeReport, outputPath As String)
+            WriteBounded(input, report, outputPath)
         End Sub
         Private Sub WriteBounded(input As CampaignInput, value As Object, outputPath As String)
             GlobalCampaign.Build(Array.Empty(Of DiscoveredNpc)(), input.Policy, "report-preflight")

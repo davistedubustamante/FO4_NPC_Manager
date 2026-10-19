@@ -142,6 +142,9 @@ Module Program
         Dim localizedPm As New PluginManager() : localizedPm.LoadAllPlugins(data, order)
         Check(localizedPm.ResolveFormID(BitConverter.ToUInt32(written.GetSubrecord("VTCK").Value.Data, 0), reopened) = &H1000802UI, "localized round-trip preserves voice FormID")
         Check(File.ReadAllBytes(Path.Combine(data, "Fixture.esm")).SequenceEqual(allBytes), "localized master and original string IDs remain untouched")
+        Using proof = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "localized-positive", "verification.json")))
+            Check(proof.RootElement.GetProperty("localizedStrings").EnumerateArray().Any(Function(e) e.GetProperty("Id").GetUInt32() = 42UI AndAlso e.GetProperty("SourcePlugin").GetString() = "Fixture.esm"), "localized verification traces source string ID and owner while delivering inline text")
+        End Using
         Dim profile As New NpcBatchProfile With {.DataRoot = data, .LoadOrder = order.ToList(), .ProtectedRoots = New List(Of String) From {data, tables}, .RequireFaceGen = False, .Localization = localization,
             .Targets = New List(Of NpcBatchTarget) From {New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H800UI, .Age = AgeEvidence.Adult, .AdultEvidence = "controlled adult"}}}
         Dim result = ProductionNpcBatch.Run(profile, root)
@@ -186,6 +189,129 @@ Module Program
         File.WriteAllText(Path.ChangeExtension(spanish.FilePath, ".cpoverride"), "1252")
         Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-encoding"), AgeEvidence.Adult, "controlled adult", localization), "unsealed encoding override cannot change reproducible localized output")
         Check(ReferenceEquals(beforeDictionary, FilesDictionary_class.Dictionary), "failed localization restores original resource context")
+    End Sub
+
+    Private Sub RewriteFixture(data As String, rewrite As Func(Of PluginRecord, Byte()))
+        Dim input = Path.Combine(data, "Fixture.esm")
+        Dim reader As New PluginReader() : reader.Load(input)
+        Dim header = GenericPluginWriter.BuildTes4Header(Config_App.Game_Enum.Fallout4, True, False, reader.Masters, reader.Records.Count + 4, &H900UI, "controlled traits fixture", False)
+        Dim allBytes = header.ToList()
+        For Each group In reader.Records.Values.GroupBy(Function(r) r.Header.Signature)
+            Dim members As New List(Of Byte())
+            For Each record In group
+                members.Add(GenericPluginWriter.WrapRecord(record.Header.Signature, rewrite(record), record.Header.Flags, record.Header.FormID, record.Header.VCS1, record.Header.VCS2, Config_App.Game_Enum.Fallout4))
+            Next
+            allBytes.AddRange(GenericPluginWriter.BuildGrup(group.Key, members))
+        Next
+        File.WriteAllBytes(input, allBytes.ToArray())
+    End Sub
+    Private Function RecordBytes(record As PluginRecord) As Byte()
+        Return record.Subrecords.SelectMany(Function(part) Sr(part.Signature, part.Data)).ToArray()
+    End Function
+    Private Sub TraitsChecks(root As String)
+        Dim data = Directory.CreateDirectory(Path.Combine(root, "traits-inputs")).FullName
+        Dim order = {"Fallout4.esm", "Fixture.esm"}
+        Fixture(data, twoNpcs:=True, genericHuman:=True)
+        Dim script = New Byte() {6, 0, 2, 0, 1, 0, 5, 0, 80, 114, 111, 98, 101, 0, 0, 0}
+        RewriteFixture(data,
+            Function(record)
+                If record.Header.Signature <> "NPC_" OrElse record.Header.FormID <> &H1000804UI Then Return RecordBytes(record)
+                Dim parts As New List(Of Byte)
+                For Each part In record.Subrecords
+                    Dim bytes = part.Data.ToArray()
+                    If part.Signature = "ACBS" Then Array.Copy(BitConverter.GetBytes(1US), 0, bytes, 14, 2)
+                    If part.Signature = "VMAD" Then bytes = script
+                    If part.Signature = "RNAM" OrElse part.Signature = "VTCK" Then bytes = BitConverter.GetBytes(0UI)
+                    parts.AddRange(Sr(part.Signature, bytes))
+                Next
+                parts.AddRange(Sr("TPLT", BitConverter.GetBytes(&H1000800UI)))
+                parts.AddRange(Sr("SNAM", BitConverter.GetBytes(&H1000805UI).Concat(New Byte(3) {}).ToArray()))
+                parts.AddRange(Sr("CNTO", BitConverter.GetBytes(&H1000806UI).Concat(BitConverter.GetBytes(1UI)).ToArray()))
+                parts.AddRange(Sr("PKID", BitConverter.GetBytes(&H1000807UI)))
+                Return parts.ToArray()
+            End Function)
+        Dim fixturePath = Path.Combine(data, "Fixture.esm")
+        Dim expanded = File.ReadAllBytes(fixturePath).ToList()
+        Dim kinds = {"FACT", "ARMO", "PACK"}
+        For i = 0 To kinds.Length - 1
+            Dim extra = GenericPluginWriter.WrapRecord(kinds(i), Sr("EDID", Text("Unrelated" & kinds(i))), 0UI, &H1000805UI + CUInt(i), 0UI, 0US, Config_App.Game_Enum.Fallout4)
+            expanded.AddRange(GenericPluginWriter.BuildGrup(kinds(i), New List(Of Byte()) From {extra}))
+        Next
+        Dim inputBytes = expanded.ToArray()
+        Array.Copy(BitConverter.GetBytes(15UI), 0, inputBytes, 34, 4)
+        File.WriteAllBytes(fixturePath, inputBytes)
+        Dim patch = WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-positive"), AgeEvidence.Adult, "controlled adult target")
+        Dim reader As New PluginReader() : reader.Load(patch)
+        Dim pm As New PluginManager() : pm.LoadAllPlugins(data, order)
+        Dim written = reader.Records.Values.Single()
+        Check(BitConverter.ToUInt16(written.GetSubrecord("ACBS").Value.Data, 14) = 0US, "original materializer clears only verified Traits inheritance")
+        Check(pm.ResolveFormID(BitConverter.ToUInt32(written.GetSubrecord("RNAM").Value.Data, 0), reader) = &H1000801UI AndAlso pm.ResolveFormID(BitConverter.ToUInt32(written.GetSubrecord("VTCK").Value.Data, 0), reader) = &H1000802UI, "materialized effective race and voice survive master remapping")
+        Check(written.GetSubrecord("VMAD").Value.Data.SequenceEqual(script), "materializing Traits preserves target nonempty VMAD rather than terminal script")
+        Check(pm.ResolveFormID(BitConverter.ToUInt32(written.GetSubrecord("SNAM").Value.Data, 0), reader) = &H1000805UI, "Traits materialization preserves target faction")
+        Check(pm.ResolveFormID(BitConverter.ToUInt32(written.GetSubrecord("CNTO").Value.Data, 0), reader) = &H1000806UI AndAlso BitConverter.ToUInt32(written.GetSubrecord("CNTO").Value.Data, 4) = 1UI, "Traits materialization preserves target inventory")
+        Check(pm.ResolveFormID(BitConverter.ToUInt32(written.GetSubrecord("PKID").Value.Data, 0), reader) = &H1000807UI, "Traits materialization preserves target package")
+        Check(File.ReadAllBytes(Path.Combine(data, "Fixture.esm")).SequenceEqual(inputBytes), "template source and inheriting original plugin unchanged")
+        Dim campaign As New CampaignInput With {.DataRoot = data, .LoadOrder = order.ToList(), .ProtectedRoots = New List(Of String) From {data}}
+        campaign.Policy.HumanRaces.Add("FIXTURE.ESM|000801")
+        campaign.Policy.AdultEvidence.Add("FIXTURE.ESM|000804", "controlled adult")
+        Dim plan = GlobalNpcDiscovery.Scan(campaign)
+        Check(plan.Decisions.Single(Function(d) d.Npc.ObjectId = &H804UI).Npc.TraitsMaterialized, "global classification uses materialized effective Traits without mutating source")
+        RewriteFixture(data,
+            Function(record)
+                Dim parts = RecordBytes(record).ToList()
+                If record.Header.Signature = "NPC_" AndAlso record.Header.FormID = &H1000800UI Then
+                    parts.Clear()
+                    For Each part In record.Subrecords
+                        Dim bytes = part.Data.ToArray()
+                        If part.Signature = "ACBS" Then Array.Copy(BitConverter.GetBytes(1US), 0, bytes, 14, 2)
+                        parts.AddRange(Sr(part.Signature, bytes))
+                    Next
+                    parts.AddRange(Sr("TPLT", BitConverter.GetBytes(&H1000804UI)))
+                End If
+                Return parts.ToArray()
+            End Function)
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-cycle"), AgeEvidence.Adult, "controlled adult"), "original chain cycle detection prevents autonomous template export")
+        File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), inputBytes)
+        RewriteFixture(data, Function(record) If(record.Header.FormID = &H1000804UI, record.Subrecords.SelectMany(Function(part) Sr(part.Signature, If(part.Signature = "TPLT", BitConverter.GetBytes(&H1000FFFUI), part.Data))).ToArray(), RecordBytes(record)))
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-incomplete"), AgeEvidence.Adult, "controlled adult"), "dead Traits pointer cannot use editor fallback")
+        File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), inputBytes)
+        RewriteFixture(data, Function(record) If(record.Header.FormID = &H1000804UI, RecordBytes(record).Concat(Sr("TPLT", BitConverter.GetBytes(&H1000800UI))).ToArray(), RecordBytes(record)))
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-ambiguous"), AgeEvidence.Adult, "controlled adult"), "duplicate template pointer is rejected as ambiguous")
+        Check(Not Directory.Exists(Path.Combine(root, "traits-cycle")) AndAlso Not Directory.Exists(Path.Combine(root, "traits-incomplete")), "invalid template chains write no output directories")
+    End Sub
+
+    Private Sub NarrativeChecks(root As String)
+        Dim data = Directory.CreateDirectory(Path.Combine(root, "narrative-inputs")).FullName
+        Fixture(data, genericHuman:=True)
+        Dim game = Config_App.Game_Enum.Fallout4
+        Dim questBody = Sr("EDID", Text("SyntheticQuest")) _
+            .Concat(Sr("DNAM", New Byte(11) {})) _
+            .Concat(Sr("ANAM", BitConverter.GetBytes(1UI))) _
+            .Concat(Sr("ALST", BitConverter.GetBytes(0UI))) _
+            .Concat(Sr("ALID", Text("ActorAlias"))) _
+            .Concat(Sr("FNAM", BitConverter.GetBytes(0UI))) _
+            .Concat(Sr("ALUA", BitConverter.GetBytes(&H800UI))) _
+            .Concat(Sr("ALED", Array.Empty(Of Byte)())).ToArray()
+        Dim quest = GenericPluginWriter.WrapRecord("QUST", questBody, 0UI, &H1000800UI, 0UI, 0US, game)
+        Dim sceneBody = Sr("EDID", Text("SyntheticScene")).Concat(Sr("PNAM", BitConverter.GetBytes(&H1000800UI))).ToArray()
+        Dim scene = GenericPluginWriter.WrapRecord("SCEN", sceneBody, 0UI, &H1000801UI, 0UI, 0US, game)
+        Dim relationBody = Sr("EDID", Text("SyntheticRelation")).Concat(Sr("DATA", BitConverter.GetBytes(&H800UI).Concat(BitConverter.GetBytes(&H800UI)).Concat(New Byte(7) {}).ToArray())).ToArray()
+        Dim relation = GenericPluginWriter.WrapRecord("RELA", relationBody, 0UI, &H1000802UI, 0UI, 0US, game)
+        Dim header = GenericPluginWriter.BuildTes4Header(game, False, False, New List(Of String) From {"Fixture.esm"}, 6, &H803UI, "static graph fixture", False)
+        File.WriteAllBytes(Path.Combine(data, "Narrative.esp"), header.Concat(GenericPluginWriter.BuildGrup("QUST", New List(Of Byte()) From {quest})).Concat(GenericPluginWriter.BuildGrup("SCEN", New List(Of Byte()) From {scene})).Concat(GenericPluginWriter.BuildGrup("RELA", New List(Of Byte()) From {relation})).ToArray())
+        Dim campaign As New CampaignInput With {.DataRoot = data, .LoadOrder = New List(Of String) From {"Fallout4.esm", "Fixture.esm", "Narrative.esp"}, .ProtectedRoots = New List(Of String) From {data}}
+        campaign.Policy.HumanRaces.Add("FIXTURE.ESM|000801")
+        campaign.Policy.AdultEvidence.Add("FIXTURE.ESM|000800", "controlled adult")
+        Dim report = NarrativeDependencies.Analyze(campaign)
+        Check(report.Edges.Any(Function(e) e.Signature = "QUST" AndAlso e.Target = "FIXTURE.ESM|000800" AndAlso e.Field.Contains("ALUA")), "original canonical walker discovers quest unique-actor alias reference")
+        Check(report.Edges.Any(Function(e) e.Signature = "SCEN" AndAlso e.Target = "NARRATIVE.ESP|000800"), "original canonical walker discovers scene quest dependency")
+        Check(report.Edges.Any(Function(e) e.Signature = "RELA" AndAlso e.Target = "FIXTURE.ESM|000800"), "original canonical walker discovers relationship actor references")
+        Check(report.Npcs.Single().Upstream.Contains("NARRATIVE.ESP|000801") AndAlso report.Npcs.Single().ReviewRequired, "reverse transitive analysis requires review for quest-linked generic NPC")
+        Check(report.Npcs.Single().Voice = "FIXTURE.ESM|000802" AndAlso report.Status.Contains("NOT-QUEST-COMPATIBILITY"), "static impact records effective voice without asserting quest compatibility")
+        Reject(Sub() NarrativeDependencies.Analyze(campaign, 1), "narrative edge budget fails closed")
+        Dim reportPath = Path.Combine(root, "narrative-report.json")
+        GlobalNpcDiscovery.WriteNarrativeReport(campaign, report, reportPath)
+        Reject(Sub() GlobalNpcDiscovery.WriteNarrativeReport(campaign, report, reportPath), "narrative report cannot overwrite prior evidence")
     End Sub
 
     Function Main(args As String()) As Integer
@@ -384,7 +510,23 @@ Module Program
             Reject(Sub() GlobalNpcDiscovery.Scan(campaign), "winning NPC record budget blocks before inventory allocation")
             campaign.Policy.MaxRecords = 100000
             File.WriteAllText(Path.Combine(root, "campaign-profile.json"), JsonSerializer.Serialize(campaign))
+            Dim preparationStage = Path.Combine(root, "controlled-preparation")
+            CampaignPreparation.Start(campaign, approvedPlan, preparationStage, 32768)
+            CampaignPreparation.SetPaused(preparationStage, True)
+            Check(CampaignPreparation.PrepareNext(campaign, approvedPlan, preparationStage).Status = "PAUSED-PREPARATION-ONLY", "campaign preparation pause survives process-style recovery")
+            CampaignPreparation.SetPaused(preparationStage, False)
+            Dim firstPage = CampaignPreparation.PrepareNext(campaign, approvedPlan, preparationStage)
+            Check(firstPage.PageIndex = 0 AndAlso File.Exists(firstPage.OutputPath), "sequential preparation persists quota-reserved production profile")
+            Check(CampaignPreparation.PrepareNext(campaign, approvedPlan, preparationStage).Status = "ALL-PAGES-PREPARED-NOT-CONVERTED", "resumed preparation skips verified completed pages")
+            File.WriteAllText(firstPage.OutputPath, "interrupted or corrupt staged page")
+            Dim retryPage = CampaignPreparation.PrepareNext(campaign, approvedPlan, preparationStage)
+            Check(retryPage.PageIndex = 0 AndAlso retryPage.OutputPath <> firstPage.OutputPath, "partial staged page retries in a new charged attempt without overwriting")
+            campaign.Policy.BatchSize = 2
+            Reject(Sub() CampaignPreparation.PrepareNext(campaign, approvedPlan, preparationStage), "stale campaign policy blocks resumed page preparation")
+            campaign.Policy.BatchSize = 10
             LocalizationChecks(root)
+            TraitsChecks(root)
+            NarrativeChecks(root)
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0

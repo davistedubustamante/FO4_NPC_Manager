@@ -40,3 +40,7 @@ On resume read AGENTS.md, requirements.json, BLOCKERS.md and EVIDENCE.md; inspec
 ## Active session: R15 first
 
 Implement strict explicit-language loose-table resource scope over the pinned original resolver, hash/size/provenance checks, nonlocalized self-contained ESP output through the existing writer and canonical readback. Preserve original localized inputs/IDs; output stores selected text inline (does not retain external numeric IDs). Positive binary fixtures and negative missing/table/ID/master/language/hash cases are mandatory before accepting this route. BA2 selection/provenance and real GOTY/DLC evidence remain blocked. Next R11 original resolver/materializer; then independent R14/R13 admission work. No new installations or pin changes.
+
+### Active implementation checkpoint
+
+R11 strict Traits-only route, R14 static dependency graph, R13 quota-bound preparation (NOT asset execution) and local Windows launcher/profile manifest are implemented with new tests. Preserve queued R15 run as unexecuted evidence if superseded; validate the changed integrated revision once. New portable controlled budget tests passed 16; inspector/profile tests 27 passed + two Windows-only skips. Do not enable ESP/FaceGen mass writes based on the controlled-file quota; direct file handles remain B07.

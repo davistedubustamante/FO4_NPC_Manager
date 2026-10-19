@@ -3,12 +3,20 @@ Imports System.IO
 Imports System.Linq
 Imports System.Collections.Concurrent
 Imports System.Security.Cryptography
+Imports System.Text
 Imports System.Threading
 Imports FO4_Base_Library
 
 Namespace ExperimentalTransformation
     ' Dedicated headless operations only. The original resource dictionary is process-global.
     ' Restrict visible resources rather than changing the pinned resolver's fallback policy.
+    Public Class LocalizedStringAudit
+        Public Property SourcePlugin As String = ""
+        Public Property Field As String = ""
+        Public Property Id As UInteger
+        Public Property Kind As String = ""
+        Public Property TextSha256 As String = ""
+    End Class
     Public NotInheritable Class LocalizedExportScope
         Implements IDisposable
         Private Shared ReadOnly contextGate As New Object
@@ -64,8 +72,30 @@ Namespace ExperimentalTransformation
                 Throw
             End Try
         End Function
+        Public Shared Function Audit(npc As NPC_Data) As List(Of LocalizedStringAudit)
+            Dim result As New List(Of LocalizedStringAudit)
+            Dim view = TryCast(npc.Record, Canon.CanonView)
+            If view Is Nothing OrElse view.Resolver Is Nothing OrElse view.Context Is Nothing Then Throw New InvalidDataException("Missing canonical localization context.")
+            For Each node In view.Node.Walk()
+                If Not TypeOf node.Def Is Canon.WbLStringDef OrElse Not Canon.WbLStringDef.EsIdDeTabla(node, view.Context) Then Continue For
+                Dim value As String = ""
+                If Not view.Resolver.TryText(node, value) Then Throw New InvalidDataException("Unresolved localized field: " & node.Path)
+                Dim owner = node
+                While owner IsNot Nothing AndAlso String.IsNullOrEmpty(owner.Signature)
+                    owner = owner.Parent
+                End While
+                Dim signature = If(owner Is Nothing, "", owner.Signature)
+                result.Add(New LocalizedStringAudit With {.SourcePlugin = view.Resolver.Record.SourcePluginName, .Field = node.Path,
+                    .Id = CUInt(Convert.ToInt64(node.Value) And &HFFFFFFFFL),
+                    .Kind = Canon.CanonResolver.TablaDeCampo(view.Resolver.Record.Header.Signature, signature).ToString(),
+                    .TextSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)))})
+            Next
+            Return result
+        End Function
         Public Sub VerifyUnchanged()
             For i = 0 To handles.Count - 1
+                CheckPath(handles(i).Name)
+                If File.Exists(Path.ChangeExtension(handles(i).Name, ".cpoverride")) Then Throw New IOException("Encoding sidecar appeared during export.")
                 handles(i).Position = 0
                 If Convert.ToHexString(SHA256.HashData(handles(i))) <> expected(i) Then Throw New IOException("Language table changed during export.")
                 handles(i).Position = 0

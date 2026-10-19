@@ -70,7 +70,11 @@ Namespace ExperimentalTransformation
             Dim raw = pm.GetRecord(fid)
             If raw Is Nothing OrElse raw.Header.Signature <> "NPC_" OrElse raw.Header.IsDeleted Then Throw New InvalidOperationException("Expected a live NPC_ record.")
             Dim npc = RecordParsers.ParseNPC(raw, pm)
-            If npc Is Nothing OrElse Not npc.Record.ConfigurationFlagsPresente OrElse Not npc.Record.RacePresente Then Throw New InvalidOperationException("Incomplete NPC record.")
+            If npc Is Nothing OrElse Not npc.Record.ConfigurationFlagsPresente Then Throw New InvalidOperationException("Incomplete NPC record.")
+            Dim stringAudit = LocalizedExportScope.Audit(npc)
+            Dim inheritedTraits = npc.Record.ConfigurationTemplateFlags <> 0US
+            npc = StrictTraitsMaterialization.Materialize(npc, pm)
+            If Not npc.Record.RacePresente Then Throw New InvalidDataException("NPC has no effective race.")
             Dim raceRecord = pm.GetRecord(npc.Record.Race)
             If raceRecord Is Nothing OrElse raceRecord.Header.Signature <> "RACE" OrElse raceRecord.Header.IsDeleted Then Throw New InvalidOperationException("Missing or deleted NPC race.")
             Dim raceView = TryCast(Canon.CanonRecords.Race(raceRecord, pm), Canon.RaceFO4)
@@ -124,7 +128,7 @@ Namespace ExperimentalTransformation
             Dim mapped = pm.ResolveFormID(written.Header.FormID, reopened)
             If mapped <> fid OrElse written.Header.Signature <> "NPC_" Then Throw New InvalidDataException("Identity changed during round-trip.")
             If saved.Advertencias.Count <> 0 Then Throw New InvalidDataException("Writer warnings require review: " & String.Join("; ", saved.Advertencias))
-            If Not appearance AndAlso Not raw.Subrecords.Select(Function(sr) sr.Signature).SequenceEqual(written.Subrecords.Select(Function(sr) sr.Signature)) Then Throw New InvalidDataException("Subrecord structure changed.")
+            If Not appearance AndAlso Not inheritedTraits AndAlso Not raw.Subrecords.Select(Function(sr) sr.Signature).SequenceEqual(written.Subrecords.Select(Function(sr) sr.Signature)) Then Throw New InvalidDataException("Subrecord structure changed.")
             If written.Header.Flags <> (raw.Header.Flags And Not &H40000UI) OrElse
                written.Header.Version <> raw.Header.Version OrElse written.Header.VCS1 <> raw.Header.VCS1 OrElse
                written.Header.VCS2 <> raw.Header.VCS2 Then Throw New InvalidDataException("Unexpected record header change.")
@@ -142,11 +146,12 @@ Namespace ExperimentalTransformation
                 If HashFile(Path.Combine(inputRoot, item.Key)) <> item.Value Then Throw New IOException("Input changed during processing.")
             Next
             Dim report = New With {.schemaVersion = 1, .status = If(appearance, "EXPERIMENTAL-APPEARANCE-RECORD-NOT-FACEGEN-VALIDATED", "EXPERIMENTAL-RECORD-ONLY-NOT-IN-GAME-VALIDATED"),
-                .presetSha256 = presetHash, .localization = localization,
+                .presetSha256 = presetHash, .localization = localization, .localizedStrings = stringAudit,
+                .traitsMaterialized = inheritedTraits,
                 .stringDelivery = "inline-selected-language; original master string IDs retained in untouched inputs",
                 .adultEvidence = adultEvidence, .sourcePlugin = sourcePlugin, .objectId = objectId,
                 .inputSha256 = hashes, .patchSha256 = HashFile(patch), .masters = reopened.Masters,
-                .verified = New String() {"existing-reader-reopen", "identity", "global-FormID-semantic-preservation", If(appearance, "existing-preset-overlay-save-shadow", "subrecord-structure-female-bit-only"), "header-preservation", "source-unchanged"},
+                .verified = New String() {"existing-reader-reopen", "identity", "global-FormID-semantic-preservation", If(appearance, "existing-preset-overlay-save-shadow", If(inheritedTraits, "existing-frozen-traits-materializer", "subrecord-structure-female-bit-only")), "header-preservation", "source-unchanged"},
                 .unvalidated = New String() {"adult-classifier", "FaceGen", "body", "equipment", "voices", "quests", "collection"}}
             Using stream As New FileStream(Path.Combine(destination, "verification.json"), FileMode.CreateNew, FileAccess.Write)
                 JsonSerializer.Serialize(stream, report, New JsonSerializerOptions With {.WriteIndented = True})

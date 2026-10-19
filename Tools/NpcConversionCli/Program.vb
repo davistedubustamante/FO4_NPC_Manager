@@ -5,6 +5,28 @@ Imports FO4_NPC_Manager.ExperimentalTransformation
 Module Program
     Function Main(args As String()) As Integer
         Try
+            If args.Length = 2 AndAlso (args(0) = "--pause-preparation" OrElse args(0) = "--resume-preparation") Then
+                CampaignPreparation.SetPaused(args(1), args(0) = "--pause-preparation")
+                Return 0
+            End If
+            If (args.Length = 5 AndAlso args(0) = "--start-preparation") OrElse (args.Length = 4 AndAlso args(0) = "--next-preparation") Then
+                Dim campaign = ReadCampaign(args(1))
+                If New FileInfo(args(2)).Length > 64L * 1024 * 1024 Then Throw New IOException("Saved plan exceeds 64 MiB.")
+                Dim plan = JsonSerializer.Deserialize(Of CampaignPlan)(File.ReadAllBytes(args(2)))
+                If args(0) = "--start-preparation" Then
+                    CampaignPreparation.Start(campaign, plan, args(3), Long.Parse(args(4), Globalization.CultureInfo.InvariantCulture))
+                Else
+                    Console.WriteLine(JsonSerializer.Serialize(CampaignPreparation.PrepareNext(campaign, plan, args(3))))
+                End If
+                Return 0
+            End If
+            If args.Length = 3 AndAlso args(0) = "--analyze-narrative" Then
+                Dim campaign = ReadCampaign(args(1))
+                Dim report = NarrativeDependencies.Analyze(campaign)
+                GlobalNpcDiscovery.WriteNarrativeReport(campaign, report, args(2))
+                Console.WriteLine($"{report.Edges.Count} static reference edges; quest compatibility NOT validated.")
+                Return 0
+            End If
             If args.Length = 5 AndAlso args(0) = "--prepare-page" Then
                 Dim campaign = ReadCampaign(args(1))
                 If New FileInfo(args(2)).Length > 64L * 1024 * 1024 Then Throw New IOException("Saved plan exceeds 64 MiB.")

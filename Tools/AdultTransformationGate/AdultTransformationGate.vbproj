@@ -14,6 +14,8 @@
     <Compile Include="../../FO4_NPC_Manager/NPC/NpcBatchContracts.vb" Link="NpcBatchContracts.vb" />
     <Compile Include="../../FO4_NPC_Manager/NPC/GlobalCampaign.vb" Link="GlobalCampaign.vb" />
     <Compile Include="GlobalCampaignTests.vb" />
+    <Compile Include="../../FO4_NPC_Manager/NPC/ReservedWriteBudget.vb" Link="ReservedWriteBudget.vb" />
+    <Compile Include="ReservedWriteBudgetTests.vb" />
     <Compile Include="Program.vb" />
   </ItemGroup>
 </Project>

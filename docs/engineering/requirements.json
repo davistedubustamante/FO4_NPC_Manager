@@ -177,12 +177,14 @@
     {
       "id": "R11",
       "requirement": "Admit inherited Traits through original frozen resolver/materializer",
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "R02",
         "R09"
       ],
-      "evidence": [],
+      "evidence": [
+        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification."
+      ],
       "acceptance": [
         "Reuse existing chain resolver and NpcTemplateMaterializer; no parallel parser or inheritance implementation",
         "Freeze explicit Traits resolution and apply original materialize -> overlay -> scalar save order",
@@ -214,7 +216,7 @@
     {
       "id": "R13",
       "requirement": "Quota-enforced resumable global execution over thousands of NPC",
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "R12",
         "R10",
@@ -223,7 +225,10 @@
         "R06",
         "R07"
       ],
-      "evidence": [],
+      "evidence": [
+        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification.",
+        "16 portable assertions passed for durable pre-write controlled-file quota, pause/resume/partial recovery. Does NOT constrain original path-based ESP/FaceGen writers; global mass writer remains disabled."
+      ],
       "acceptance": [
         "Campaign/page journal, sequential bounded resource worker and verified resume",
         "Hard storage enforcement for writer and FaceGen before enabling automatic writes",
@@ -234,11 +239,13 @@
     {
       "id": "R14",
       "requirement": "Global narrative dependencies and special-category redesign admission",
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "R12"
       ],
-      "evidence": [],
+      "evidence": [
+        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification."
+      ],
       "acceptance": [
         "Original record APIs build quest/alias/scene/relationship/script/voice impact graph",
         "Unique and companion transformations require individual regression evidence",
@@ -249,13 +256,14 @@
     {
       "id": "R15",
       "requirement": "Localized GOTY/DLC/mod master strings integrated with verified production export",
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "R09",
         "R12"
       ],
       "evidence": [
-        "Existing record export deliberately rejects any localized input. Global planning now exposes this blocker; no silent fallback."
+        "Existing record export deliberately rejects any localized input. Global planning now exposes this blocker; no silent fallback.",
+        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification."
       ],
       "acceptance": [
         "Reuse original localized string resolver and archive/index APIs, never a second string parser",

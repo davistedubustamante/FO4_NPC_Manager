@@ -189,10 +189,25 @@ jobs:
           & $cli.FullName --prepare-page (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/campaign-profile.json') (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/global-cli-inventory.json') 0 (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/global-cli-page.json') *>&1 | Tee-Object -FilePath prepare-page-run.log
           if ($LASTEXITCODE -ne 0) { throw "Automatic campaign page fixture failed: $LASTEXITCODE" }
 
+      - name: Exercise isolated Windows launcher and quota-bound page preparation
+        run: |
+          $cli = Get-ChildItem 'FO4_NPC_Manager/Tools/NpcConversionCli/bin' -Filter 'NpcConversionCli.exe' -Recurse | Select-Object -First 1
+          $wrapper = 'FO4_NPC_Manager/Tools/WoDInspector/Invoke-GlobalNpc.ps1'
+          $profile = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/campaign-profile.json'
+          $plan = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/global-cli-inventory.json'
+          $stage = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/launcher-preparation'
+          $digest = (Get-FileHash $cli.FullName -Algorithm SHA256).Hash
+          & $wrapper -Task AnalyzeNarrative -CliPath $cli.FullName -CliSha256 $digest -ProfilePath $profile -OutputPath (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/launcher-narrative.json') *>&1 | Tee-Object -FilePath narrative-run.log
+          if ($LASTEXITCODE -ne 0) { throw "Narrative launcher failed: $LASTEXITCODE" }
+          & $wrapper -Task StartPreparation -CliPath $cli.FullName -CliSha256 $digest -ProfilePath $profile -PlanPath $plan -StagingDirectory $stage -BudgetBytes 32768
+          if ($LASTEXITCODE -ne 0) { throw "Preparation start failed: $LASTEXITCODE" }
+          & $wrapper -Task NextPreparation -CliPath $cli.FullName -CliSha256 $digest -ProfilePath $profile -PlanPath $plan -StagingDirectory $stage
+          if ($LASTEXITCODE -ne 0) { throw "Preparation page failed: $LASTEXITCODE" }
+
       - name: Expose fixture gate diagnosis in job summary
         if: always()
         run: |
-          foreach ($log in @('npc-manager-build.log', 'roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log', 'conversion-run.log', 'discovery-run.log', 'prepare-page-run.log')) {
+          foreach ($log in @('npc-manager-build.log', 'roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log', 'conversion-run.log', 'discovery-run.log', 'prepare-page-run.log', 'narrative-run.log')) {
             if (Test-Path $log) {
               "### $log" >> $env:GITHUB_STEP_SUMMARY
               '```text' >> $env:GITHUB_STEP_SUMMARY

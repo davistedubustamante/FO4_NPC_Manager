@@ -123,7 +123,7 @@ Namespace ExperimentalTransformation
             Throw New IOException("Batch quarantined because an original input changed.")
         End Sub
         Private Function SealProfile(profile As NpcBatchProfile) As Byte()
-            Dim identity As New StringBuilder("production-batch-v5-explicit-localization" & vbLf & JsonSerializer.Serialize(profile))
+            Dim identity As New StringBuilder("production-batch-v6-strict-traits" & vbLf & JsonSerializer.Serialize(profile))
             For Each name In profile.LoadOrder
                 If Path.GetFileName(name) <> name OrElse String.IsNullOrWhiteSpace(name) OrElse name.Contains("/") OrElse name.Contains("\") Then Throw New ArgumentException("Plugin basenames required.")
                 SealInput(Path.Combine(profile.DataRoot, name), identity)

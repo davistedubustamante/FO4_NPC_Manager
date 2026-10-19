@@ -44,6 +44,8 @@ Namespace ExperimentalTransformation
         Public Property RaceFlagsKnown As Boolean
         Public Property ChildRace As Boolean
         Public Property Deleted As Boolean
+        Public Property OriginalTemplateFlags As UShort
+        Public Property TraitsMaterialized As Boolean
         Public Property TemplateFlags As UShort
         Public Property Factions As New List(Of String)
         Public Property HasScripts As Boolean
@@ -58,7 +60,7 @@ Namespace ExperimentalTransformation
         Public Property AdultEvidence As String = ""
     End Class
     Public Class CampaignPlan
-        Public Property Version As String = "global-plan-v5-explicit-localization"
+        Public Property Version As String = "global-plan-v6-strict-traits"
         Public Property Status As String = "EXPERIMENTAL-PLAN-NOT-CONVERTED"
         Public Property InputSha256 As String = ""
         Public Property PlanSha256 As String = ""
