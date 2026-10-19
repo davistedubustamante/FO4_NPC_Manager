@@ -29,7 +29,8 @@
         "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615511",
         "Master cleanup verified in global FormID space; NPC/race/voice identity, headers, subrecord structure and source hashes preserved",
         "No in-game, real collection, nonempty quest-script or FaceGen validation implied",
-        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 — 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only."
+        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 — 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only.",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification."
       ],
       "acceptance": [
         "Generate structurally valid NPC_ fixture with required fields",
@@ -47,7 +48,8 @@
       "evidence": [
         "Fixture scope only: Windows 20 inspector tests passed, including PowerShell entry point and junction handling; Linux 19 passed and 1 Windows-only skipped",
         "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39193615511 at a0bf328",
-        "Real installation inventory remains user-local and unexecuted in cloud"
+        "Real installation inventory remains user-local and unexecuted in cloud",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification."
       ],
       "acceptance": [
         "Windows invocation reads only explicit roots",
@@ -140,7 +142,8 @@
         "BINARY FIXTURE SCOPE ONLY: 37 production integration assertions and actual two-NPC conversion CLI execution passed at 9adb4a6",
         "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39259948641",
         "No real FaceGen, playable collection, body/voice/quest or in-game certification implied",
-        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 — 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only."
+        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 — 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only.",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification."
       ],
       "acceptance": [
         "Reuse original preset parser/category filter/save shadow/overlay/writer and FaceGen generator",
@@ -164,7 +167,8 @@
         "ESP milestone verified; generated-resource copy/conflict branches are compiled but not exercised by record-only fixtures. Resource bundle acceptance remains pending.",
         "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 — 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only.",
         "d1e483f: controlled checkpointed .bin copy, deduplication, conflict rejection, no partial bundle checkpoint and copied-file tamper detection passed. This certifies file-copy semantics, not positive FaceGen.",
-        "e71248f: Windows CI Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39272442946 ; 72 integration assertions and actual CLI export/discovery/page preparation. Portable planner 23 assertions over 10,000 synthetic entries; not real global conversion. Controlled copy fixtures do not certify NIF/DDS."
+        "e71248f: Windows CI Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39272442946 ; 72 integration assertions and actual CLI export/discovery/page preparation. Portable planner 23 assertions over 10,000 synthetic entries; not real global conversion. Controlled copy fixtures do not certify NIF/DDS.",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification."
       ],
       "acceptance": [
         "Reuse original multientry ESP writer, never a second serializer",
@@ -183,7 +187,9 @@
         "R09"
       ],
       "evidence": [
-        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification."
+        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification.",
+        "38c7f2b Windows runtime: all mandatory localized/Traits checks passed before first narrative assertion failure, confirmed by LAST-CHECK and stack in https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39320528288 . Scope remains selected loose tables and Traits-only binary fixtures; not real collection certification.",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification."
       ],
       "acceptance": [
         "Reuse existing chain resolver and NpcTemplateMaterializer; no parallel parser or inheritance implementation",
@@ -203,7 +209,8 @@
       "evidence": [
         "Local planner: 20 assertions on 10000 rows; Windows real-reader discovery validation pending",
         "d1e483f: full Windows CI passed: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39271103795; 69 mandatory production assertions plus actual discovery/page CLI execution. Generated binary fixtures only; portable planner handles 10000 rows, no game conversion certification.",
-        "e71248f: Windows CI Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39272442946 ; 72 integration assertions and actual CLI export/discovery/page preparation. Portable planner 23 assertions over 10,000 synthetic entries; not real global conversion. Controlled copy fixtures do not certify NIF/DDS."
+        "e71248f: Windows CI Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39272442946 ; 72 integration assertions and actual CLI export/discovery/page preparation. Portable planner 23 assertions over 10,000 synthetic entries; not real global conversion. Controlled copy fixtures do not certify NIF/DDS.",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification."
       ],
       "acceptance": [
         "Original loader resolves winning overrides and ESL identities; lineage and masters reported",
@@ -227,7 +234,9 @@
       ],
       "evidence": [
         "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification.",
-        "16 portable assertions passed for durable pre-write controlled-file quota, pause/resume/partial recovery. Does NOT constrain original path-based ESP/FaceGen writers; global mass writer remains disabled."
+        "16 portable assertions passed for durable pre-write controlled-file quota, pause/resume/partial recovery. Does NOT constrain original path-based ESP/FaceGen writers; global mass writer remains disabled.",
+        "38c7f2b mandatory sequential preparation/pause/resume/stale/partial-attempt checks completed before later R14 failure. Original ESP/FaceGen handles remain outside gateway quota.",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification."
       ],
       "acceptance": [
         "Campaign/page journal, sequential bounded resource worker and verified resume",
@@ -244,7 +253,10 @@
         "R12"
       ],
       "evidence": [
-        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification."
+        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification.",
+        "38c7f2b found test assumed readable WbNode.Path contains signature; 71d329a records Subrecord explicitly and validates ALUA. Final Windows validation pending.",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification.",
+        "Canonical subrecord signature ALUA recorded separately from readable path; quest alias, scene, relationship, transitive review and effective voice fixtures passed. Runtime/dynamic coverage and execution-admission integration still pending."
       ],
       "acceptance": [
         "Original record APIs build quest/alias/scene/relationship/script/voice impact graph",
@@ -263,7 +275,9 @@
       ],
       "evidence": [
         "Existing record export deliberately rejects any localized input. Global planning now exposes this blocker; no silent fallback.",
-        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification."
+        "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification.",
+        "38c7f2b Windows runtime: all mandatory localized/Traits checks passed before first narrative assertion failure, confirmed by LAST-CHECK and stack in https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39320528288 . Scope remains selected loose tables and Traits-only binary fixtures; not real collection certification.",
+        "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification."
       ],
       "acceptance": [
         "Reuse original localized string resolver and archive/index APIs, never a second string parser",

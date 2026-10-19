@@ -93,3 +93,5 @@ and [blocker register](docs/engineering/BLOCKERS.md) distinguish synthetic, bina
 The [offline Windows WoD inspector](Tools/WoDInspector/README.md) inventories local installations
 and BA2 member names without uploading the collection or extracting assets. The
 [recurring automation proposal](docs/engineering/AUTOMATIONS.md) remains disabled pending explicit approval.
+
+Localized/Traits integration and safe preparation: [implementation and boundaries](docs/engineering/LOCALIZED_AND_TRAITS.md).

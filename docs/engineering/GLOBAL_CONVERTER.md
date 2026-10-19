@@ -30,7 +30,7 @@ The first global milestone discovers winning NPC records, classifies reviewed id
 | Unknown race / unresolved templates | Blocked | Reviewed race policy / original frozen materializer |
 | Already female | No conversion certification | Still needs integral body/FaceGen/runtime compatibility audit |
 
-Companion detection only covers configured faction/key evidence, not all possible quest-driven companions. Quest references without NPC scripts are not yet analyzed. Winning override lineage describes conflicts; it does not automatically resolve their intent.
+Companion detection only covers configured faction/key evidence, not all possible quest-driven companions. Static quest/alias references are now analyzed separately by NarrativeDependencies; campaign execution admission and runtime behavior are still incomplete. Winning override lineage describes conflicts; it does not automatically resolve their intent.
 
 ## Local Windows commands
 
@@ -60,3 +60,7 @@ Verify actual GOTY/DLC/WoD completeness, winning resources in the isolated mod-m
 The base library already exposes PluginManager.TryResolveLocalizedString, CanonResolver.TryText and the canonical writer's TextoLocalizadoSinResolver findings. SaveNpcEspWriter.CuerpoDeNpcSobrescrito forwards missing-string findings into its warning list. Reuse these rather than implementing string readers. The current isolated adapter intentionally rejects localized load orders before this stage. Removing that guard alone is insufficient: LocalizedStringResolver selects INI/UI-culture/English fallback and the active resource dictionary, so isolated language selection, winning table provenance and content fingerprints must be explicit and tested before enabling export. R15 records that work; actual game tables stay local.
 
 R16 is the final certification boundary. The current NPC_ inventory does not observe runtime-only actors created by scripts/F4SE, placed-instance state, or quest aliases beyond the loaded base records. Those limitations must be reconciled against the actual collection rather than hidden in a global coverage percentage.
+
+## Verified adapter expansion (71d329a)
+
+Selected-language loose-table export/reopen, strict original Traits-only materialization, canonical static narrative impact and quota-bound sequential metadata preparation now pass Windows fixtures. LOCALIZED_AND_TRAITS.md defines their exact limits and commands. Production/global admission fingerprints are v7. Historical initial localized/template rejection descriptions above are superseded only for those verified subroutes. BA2 resources, additional inherited categories, actual narrative/runtime compatibility and a quota covering original ESP/FaceGen direct handles remain blockers. No global asset executor or global conversion certification is enabled.

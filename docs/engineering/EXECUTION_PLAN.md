@@ -1,46 +1,42 @@
 # Persistent execution plan
 
-Branch: dev/npc-transformation-experimental. Preserve 74289ec, d1e483f and all prior progress. No merge, release, installation, original game/save edits or recurring automation activation.
+Branch: dev/npc-transformation-experimental. Preserve 74289ec, e71248f, c1c771f and every subsequent checkpoint. No merge, release, installation, original game/save edits or recurring automation activation.
 
-## Goal and verified checkpoints
+## Goal and evidence boundaries
 
-Final target: female conversion across Fallout 4 GOTY, DLC and every active WoD plugin, with separate verified redesign paths for special categories. GLOBAL_CONVERTER.md defines the architecture. R16 is final certification and remains pending; inventory/plans/flag edits are never global conversion proof. No dependence on the historical three Lite mods.
+Final target: female conversion across Fallout 4 GOTY, DLC and all active WoD plugins, with separate verified special-category redesign. GLOBAL_CONVERTER.md describes the campaign architecture; LOCALIZED_AND_TRAITS.md describes the new adapters and their exact bounds. Plans, flag edits and static graphs are not complete conversion proof. No dependence on the three historical Lite mods; do not use D:\CRU-Female-Lite.
 
-Latest runtime-verified code: e71248f at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39272442946 (Success). Native, GUI, original/new CLI, 72 integration assertions, actual discovery and automatic page preparation passed. Earlier verified checkpoint d1e483f remains preserved.
+Preserved previous fully successful Windows checkpoint: e71248f / https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39272442946 (72 integration assertions, original/new tools, discovery/page CLI, license/provenance and artifact guards). c1c771f preserves its engineering records.
 
-- R01: persistent recovery records, DAG, retry and authorization boundaries verified.
-- R02/R09: original reader, overrides, preset parser/filter/save shadow, writer, semantic readback and staged FaceGen entry point reused. Positive real FaceGen is not certified.
-- R03: local read-only inspector verified on fixtures; actual installation data remains local/unavailable in cloud.
-- R04: recurring proposal prepared, disabled; no callable scheduler was available.
-- R10: aggregate ESP and controlled checkpointed file-copy/dedup/conflict/tamper tests passed. Controlled .bin files prove copy semantics, not NIF/DDS or in-game compatibility.
-- R12: winning NPC discovery/lineage, reviewed category/adult policies, child/unknown/deleted/ESL/stale/localized admission and deterministic pages verified on generated binary fixtures. Portable planner exercises 10,000 entries. This is not 10,000 game conversions.
+Current functional route evidence: 38c7f2b / https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39320528288 passed every mandatory localized, Traits and preparation check, then failed the first narrative assertion. Public LAST-CHECK and stack identify the precise boundary; see EVIDENCE.md. No full workflow success claimed for it.
 
-## Current verification
+Latest fully successful integrated code: 71d329a / https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051. Status Success. All 125 mandatory integration checks passed. Portable baseline31 + journal21 + campaign23 (10,000 synthetic rows) + controlled budget16 passed locally and in the prerequisite matrix; inspector/profile helper locally 27 passed + two Windows-only skips. Native, GUI, original/new CLI, all CLI/launcher runtime checks, license/provenance, artifact guards and publication passed. Five experimental artifacts reported.
 
-Verified e71248f: original loader sigFilter, loaded-record count, shared preset admission and distinct actual-inventory/policy bounds. Windows assertions passed: 72; portable baseline 31 + journal 21 + campaign 23. Local pinned SDK rebuild/runtime and inspector checks pass. No new dependency installation or pin changes.
+## Session implementations
 
-Global iteration attempts: 1 failed harness compile (sr/Sr shadowing); 2 failed harness compile (copyJournal/CopyJournal shadowing); 3 fully passed; 4 final refinement fully passed. Four-execution limit respected; no fifth full build. Both compilation failures and their causes remain in EVIDENCE.md. Documentation-only changes use engineering-records CI.
+- R15: original resolver/writer, explicit selected-language loose-table manifest, immutable byte hashes/size limits, scoped UTF8 output and context restoration, original-ID audit, winning override ownership, missing/wrong resources and masters fail closed. Output stores chosen language inline; original localized inputs remain untouched. BA2-only resources, encoding exceptions and actual collection trials remain pending.
+- R11: original frozen Traits resolver/materializer, strict deterministic NPC-only chains, target VMAD/faction/inventory/package preservation. Only Traits-only inheritance is admitted. Cycles/dead/incomplete/deleted/duplicate/non-NPC/other-category chains remain blocked. Child/unknown adulthood guards remain.
+- R14: original canonical reference walker, static quest/alias/scene/relationship/voice impact, transitive review, explicit subrecord identity and bounded coverage findings. No quest/runtime compatibility certification or complete campaign admission integration.
+- R13: durable pre-write quota for gateway-controlled metadata files, exclusive checkpoints, pause/resume, charged partial attempts and sequential page preparation through existing DTOs. No global ESP/FaceGen writer enabled; this logical byte ceiling does not constrain their direct file handles or OS allocation.
+- R03/local bridge: existing metadata inspector, private selected-language profile helper and fingerprinted Windows CLI launcher; no installation, VFS setup, collection copy/upload or original file edits.
+- R01/R04: recovery records/DAG maintained; recurring proposal stays disabled. R06/R07/R08/R16 still need actual assets/runtime evidence.
 
-## Next feasible implementation
+## Bounded validation and recovery
 
-1. R15 localization: remove the current verified export boundary only after explicit isolated language selection, table/resource provenance and missing-table/ID failures are tested. Reuse PluginManager.TryResolveLocalizedString, CanonResolver.TryText and canonical writer findings. Do not add string parsers or rely silently on INI/UI-culture/English fallback. Generate controlled string fixtures; actual game tables remain local.
-2. R11 inherited Traits: reuse the existing chain resolver and frozen materializer. Include nonempty VMAD and preserve voice/other inherited categories. Unknown/cyclic/unresolved chains remain blocked.
-3. R14 narrative/special routes: original record APIs for quests, aliases, scenes, relationships and voices. Companion faction/key and Unique/Essential/VMAD signals are triage, not complete dependency analysis. Robots/creatures/child redesign need independent proof.
-4. R13 campaign executor: campaign/page identity and output hashes, one sequential worker, pause/resume and hard output quota before enabling writer/FaceGen. Estimates/post-write checks are not quotas. Depends on actual asset/body and admission evidence.
-5. R16: reconcile actual complete GOTY/DLC/WoD profile and runtime-only coverage; certify real bundles, missions/scenes/voices and category-specific redesign. No unverified target silently counted converted.
+Initial R15 8967297 was superseded/cancelled under existing concurrency. Integrated executions: 1 (95bb070) GUI compile failed on reserved Handles identifier; 2 (bf055b2) compiled but positive Traits fixture had out-of-order fields; 3 (38c7f2b) passed R15/R11/preparation but narrative assertion confused readable names with signatures; 4 (71d329a) final changed-code validation fully passed. Exact causes/fixes remain in EVIDENCE.md. Do not start a fifth full execution for this step. If final run fails, record the precise remaining error and retain independently verified sections; never weaken an assertion or claim full success.
 
-The inspector is a helper, not a development gate. Continue independent code work when local game resources are missing. Actual positive FaceGen/body/equipment/runtime tests require a frozen authorized separate Windows profile with licensed resources. Never upload or duplicate the 300 GB collection.
+Documentation-only commits trigger engineering-records CI; do not rebuild passing code unchanged. On interruption inspect current Git and actual CI before repeating anything. Production/global fingerprints v7 reject older admission seals without deleting prior staging.
 
-## Storage and resume
+## Next viable requirements
 
-Reuse SDK/pinned caches; cloud working-set ceiling 2 GiB (observed tools 1.2 GiB + repository 22 MiB). Bounded new Windows artifacts at most 256 MiB plus portable matrix evidence at most 1 MiB/job; retention two days; do not delete existing user artifacts. Discovery writes bounded metadata only. Production v4/global plan v4 reject older admission fingerprints without deleting prior staging.
+1. R15: original archive/index APIs for explicit BA2 table provenance and bounded extraction, positive/negative controlled archive fixtures; explicit handling/tests of encoding exceptions and mixed inline overrides. Real GOTY/DLC positive case requires the actual local profile/tables, never uploads.
+2. R11: additional inherited categories and deterministic reviewed leveled routes only after effective flag/category/narrative semantics and preservation are tested; no arbitrary leaf pick or age inference.
+3. R14: integrate static findings with campaign admission and expand referenced records/voice/audio coverage; dynamic Papyrus, aliases, conditions and quests/scenes still require real game regression.
+4. R13: verified enforcement covering every ESP/FaceGen/cache/temp/native write before enabling mass execution. A gateway, estimates and post-write checks are insufficient for direct-path writers. Preserve original small explicit diagnostic batch behavior and experimental labels.
+5. R06/R07/R08/R16: actual FaceGen/body/equipment bundles and complete frozen GOTY/DLC/WoD profile; isolated runtime regression including dialogue, missions, scenes, relationships and reversal. No unresolved category silently counted converted.
 
-On resume read AGENTS.md, requirements.json, BLOCKERS.md and EVIDENCE.md; inspect Git and actual CI, then select first viable pending requirement. Preserve user work. Initial attempt plus at most three diagnosis-driven retries per failing step, one active Windows revision. Do not rebuild unchanged passing code. No background work is implied by this plan or the disabled automation proposal.
+Use an already isolated authorized Windows resource view and the local bridge. Missing game resources do not block independent development; retry limits and unavailable runtime evidence do bound what can be certified this session. No unattended work is implied.
 
-## Active session: R15 first
+## Storage
 
-Implement strict explicit-language loose-table resource scope over the pinned original resolver, hash/size/provenance checks, nonlocalized self-contained ESP output through the existing writer and canonical readback. Preserve original localized inputs/IDs; output stores selected text inline (does not retain external numeric IDs). Positive binary fixtures and negative missing/table/ID/master/language/hash cases are mandatory before accepting this route. BA2 selection/provenance and real GOTY/DLC evidence remain blocked. Next R11 original resolver/materializer; then independent R14/R13 admission work. No new installations or pin changes.
-
-### Active implementation checkpoint
-
-R11 strict Traits-only route, R14 static dependency graph, R13 quota-bound preparation (NOT asset execution) and local Windows launcher/profile manifest are implemented with new tests. Preserve queued R15 run as unexecuted evidence if superseded; validate the changed integrated revision once. New portable controlled budget tests passed 16; inspector/profile tests 27 passed + two Windows-only skips. Do not enable ESP/FaceGen mass writes based on the controlled-file quota; direct file handles remain B07.
+Reuse pinned SDK/dependency caches. Cloud working-set ceiling 2 GiB; observed tools1.2 GiB + repository23 MiB + temporary SDK Roslyn syntax helper26 MiB. No new packages or collection resources installed/downloaded. New Windows payload <=256 MiB plus portable evidence <=1 MiB per matrix job, retention two days; existing user artifacts are not deleted. Loose language pool <=128 MiB, bounded metadata outputs only. Keep original files/saves read-only.
