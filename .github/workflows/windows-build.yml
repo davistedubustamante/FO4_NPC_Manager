@@ -3,8 +3,24 @@ on:
   push:
     branches:
       - ci/windows-fo4-npc-manager
+      - dev/npc-transformation-experimental
     paths:
       - ".github/workflows/windows-build.yml"
+      - "FO4_NPC_Manager/**"
+      - "FO4_FaceTint_CLI/**"
+      - "Tools/AdultTransformationGate/**"
+      - "Papyrus/**"
+      - "Native/**"
+      - "Directory.Build.props"
+  pull_request:
+    paths:
+      - ".github/workflows/windows-build.yml"
+      - "FO4_NPC_Manager/**"
+      - "FO4_FaceTint_CLI/**"
+      - "Tools/AdultTransformationGate/**"
+      - "Papyrus/**"
+      - "Native/**"
+      - "Directory.Build.props"
   workflow_dispatch:
 
 permissions:
@@ -15,7 +31,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  synthetic-transformation:
+    name: Experimental synthetic transformation (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025-vs2026]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '8.0.408'
+      - name: Exercise the actual transformation engine with synthetic NPCs
+        working-directory: Tools/AdultTransformationGate
+        run: dotnet run --project AdultTransformationGate.vbproj --configuration Release -- experimental-synthetic-report.json
+      - name: Upload synthetic evidence (not a game patch)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: EXPERIMENTAL-synthetic-transformation-${{ matrix.os }}
+          path: Tools/AdultTransformationGate/experimental-synthetic-report.json
+          retention-days: 7
+          if-no-files-found: error
+
   build:
+    needs: synthetic-transformation
     runs-on: windows-2025-vs2026
     timeout-minutes: 35
     defaults:
@@ -111,6 +154,30 @@ jobs:
           if (!$cli) { throw 'FaceTint CLI executable missing' }
           New-Item -ItemType Directory -Force 'build-output/FaceTint-CLI' | Out-Null
           Copy-Item (Join-Path $cli.Directory.FullName '*') 'build-output/FaceTint-CLI' -Recurse -Force
+
+      - name: Verify license bundle and identify experimental provenance
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $required = @('LICENSE', 'LICENSE_CREDITS.txt', 'THIRD-PARTY-NOTICES.md', 'licenses/MIT.txt', 'licenses/Apache-2.0.txt', 'licenses/MPL-2.0.txt', 'licenses/GLFW-zlib.txt')
+          foreach ($relative in $required) {
+            $file = Join-Path 'build-output' $relative
+            if (!(Test-Path $file -PathType Leaf)) { throw "License bundle incomplete: $relative" }
+            if ((Get-Item $file).Length -eq 0) { throw "Empty license file: $relative" }
+          }
+          'EXPERIMENTAL / UNTESTED IN GAME. Synthetic transformation tests do not validate FaceGen, dialogue, quests or collection compatibility. Not a release or an installable conversion patch.' | Set-Content 'build-output/EXPERIMENTAL.txt'
+          $sources = @('FO4_NPC_Manager', 'FO4_Base_Library', 'Ba2_Bsa_Library', 'NiflySharp', 'Material-Editor-master', '../DirectXTextWrapper', '../DirectXTex')
+          $revisions = [ordered]@{}
+          foreach ($source in $sources) {
+            $revision = git -C $source rev-parse --verify HEAD
+            if ($LASTEXITCODE -ne 0) { throw "Cannot record source revision: $source" }
+            $revisions[$source] = $revision
+          }
+          [ordered]@{ status='EXPERIMENTAL-UNTESTED-IN-GAME'; run=$env:GITHUB_RUN_ID; sources=$revisions } | ConvertTo-Json -Depth 4 | Set-Content 'build-output/provenance.json'
+          Get-ChildItem 'build-output' -File -Recurse | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object FullName | ForEach-Object {
+            $relative = [System.IO.Path]::GetRelativePath((Resolve-Path 'build-output'), $_.FullName)
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $relative"
+          } | Set-Content 'build-output/SHA256SUMS.txt'
 
       - name: Upload successful compilation for isolated testing
         if: success()
