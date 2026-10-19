@@ -55,3 +55,13 @@
 - Source diagnosis: the existing LooksMenu parser sets HasOverlays=True unconditionally to model engine clearing behavior, even when the preset has no overlays. Adapter now checks the actual unsupported overlay count rather than presence of that execution channel. No serializer/preservation guard bypassed.
 - Retry also adds declared-versus-written FaceGen checks through original packer specs, rejects resource scan errors, seals inputs again before checkpoints, preserves Windows junction coverage without requiring symbolic-link privileges, and exercises the new CLI executable against a generated binary profile.
 - Local repeated checks: exit 0, 31 baseline + 18 journal assertions. Inspector exit 0: 20 discovered, 19 passed and 1 Windows-only skipped. Records checker exit 0, 9 requirements. Windows retry pending.
+
+### Production integration attempt 2 — negative-test harness diagnosis
+- d6efc55: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39258897460. GUI and original CLI compiled; binary gate reached `InvalidDataException: Profile identity or journal format mismatch.`
+- The preset-tamper negative check intentionally changes the profile seal. Its Reject helper caught IOException but not InvalidDataException (which is not an IOException subtype). Added that exact rejection type; the fail-closed production check is retained. No success claim for the failed gate.
+- Next code revision also implements R10: unique per-NPC shard names, original multientry writer consolidation, two-NPC readback/appearance assertions, bundle tamper rejection, copied generated-resource conflict checks and versioned resume identities. Resource index is reused once per batch process, with no unchanged retry after an index error.
+
+### Aggregate iteration local checkpoint
+- Rebuilt portable gate explicitly (`dotnet build --no-restore -c Release -t:Rebuild`): exit 0, zero warnings/errors. Executed rebuilt DLL: exit 0, baseline 31 plus expanded journal 21 assertions. New checks cover verified output lookup and a torn durable snapshot. An earlier incremental execution still used the preceding 18-check binary; it is not evidence for these three new assertions.
+- Roslyn syntax gate: exit 0, zero VB syntax errors across journal, production batch, aggregate writer adapter, fixture gate and new CLI. This is not Windows semantic/runtime evidence.
+- Requirements checker: exit 0, 10 requirements, acyclic dependency graph, recurring proposal disabled. Aggregate and CLI validation pending attempt 3.

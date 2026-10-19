@@ -23,3 +23,17 @@ PluginManager and SaveNpcEspWriter. It refuses localized input, all template fla
 masters, unknown age and an existing female actor. Master cleanup is verified by reparsing the patch through the same PluginManager and emitting both trees
 in a common global-FormID space with the existing canonical serializer. Header and subrecord structure
 remain checked. This is fixture evidence, not a real-collection or full-script regression test.
+
+## Integrated production and batch coverage
+
+The gate also loads a female LooksMenu JSON preset through the original parser/category filter,
+uses the original override/save-shadow/overlay functions, writes appearance morphs to ESP and reopens them.
+It exercises mixed-batch continuation, profile/preset hash rejection and resumable checkpoints. Missing
+real FaceGen resources must produce a blocked attempt with no checkpoint.
+
+A separate two-NPC fixture exercises the original multientry writer through aggregate export, verifies
+both NPC identities/content/appearance after readback, and tests aggregate hash tampering on resume.
+The Windows workflow then invokes NpcConversionCli.exe against the generated two-NPC profile. These
+are actual production API calls on generated records; they do not demonstrate a playable collection,
+real NIF/DDS generation or quest/voice/body compatibility. The FaceGen generator requires licensed
+local resources for positive integration evidence.

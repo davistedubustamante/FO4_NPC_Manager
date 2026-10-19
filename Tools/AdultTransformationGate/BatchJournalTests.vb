@@ -23,6 +23,8 @@ Public Module BatchJournalTests
         journal.Checkpoint("Fallout4.esm|000123", {"patch.esp"})
         Check(journal.ContainsVerifiedCheckpoint("Fallout4.esm|000123"), count)
         Check(Not journal.ContainsVerifiedCheckpoint("missing"), count)
+        Check(journal.VerifiedOutputPaths("Fallout4.esm|000123").Single() = output, count)
+        Reject(Sub() journal.VerifiedOutputPaths("missing"), count)
         Dim recovered = BatchJournal.Recover(journal.StagingDirectory, profile)
         Check(recovered.CompletedNpcKeys.Length = 1, count)
         Reject(Sub() BatchJournal.Recover(journal.StagingDirectory, Encoding.UTF8.GetBytes("changed")), count)
@@ -59,6 +61,9 @@ Public Module BatchJournalTests
             File.CreateSymbolicLink(link, originalFile)
             Reject(Sub() linkJournal.Checkpoint("linked", {"linked.esp"}), count)
         End If
+        Dim torn = BatchJournal.Create(root, {original}, profile)
+        File.WriteAllText(Path.Combine(torn.StagingDirectory, ".batch-journal", "00000001.json"), "{")
+        Reject(Sub() BatchJournal.Recover(torn.StagingDirectory, profile), count)
         Return count
     End Function
     Private Sub Check(condition As Boolean, ByRef count As Integer)
@@ -68,7 +73,7 @@ Public Module BatchJournalTests
     Private Sub Reject(action As Action, ByRef count As Integer)
         Try
             action()
-        Catch ex As Exception When TypeOf ex Is InvalidDataException OrElse TypeOf ex Is IOException OrElse TypeOf ex Is ArgumentException OrElse TypeOf ex Is InvalidOperationException
+        Catch ex As Exception When TypeOf ex Is System.Text.Json.JsonException OrElse TypeOf ex Is InvalidDataException OrElse TypeOf ex Is IOException OrElse TypeOf ex Is ArgumentException OrElse TypeOf ex Is InvalidOperationException
             count += 1
             Return
         End Try

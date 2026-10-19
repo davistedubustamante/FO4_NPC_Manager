@@ -15,6 +15,9 @@ Implement the existing reader/override/preset/save-shadow/writer pipeline in a r
 
 Local baseline and recovery checks pass (31 + 18 assertions). Windows production integration is pending this code revision's CI. Next validate genuine preset appearance bytes, mixed-batch continuation and hash-sealed resume through the existing binary gate; diagnose failures before retrying. Then exercise real FaceGen in an authorized separate Windows profile when resources are available. R05 remains a real-input acceptance blocker, not a blanket blocker on implementation.
 
+## Next feasible iteration selected: R10 — aggregate batch export
+After R09 validation, consolidate per-NPC verified staging shards with the original multientry writer; produce one ESP and generated-resource Data directory. Two-target fixture, readback/semantic checks, incomplete-target exclusion and tampered-aggregate resume rejection are implemented for the next Windows validation. Resource indexing is reused once per batch and index failures do not cause unchanged scans per target. No installation is part of export.
+
 ## Resume procedure
 Read AGENTS.md, requirements.json, BLOCKERS.md and EVIDENCE.md. Inspect git status and actual CI before advancing state. Keep user work; no resets or automatic merges. Start from the first feasible pending requirement, not from a clean infrastructure rebuild. Use pinned reader/writer/editor functions. Run meaningful local and Windows checks; initial execution plus at most three diagnosis-driven retries (four total). Keep one active Windows run per code revision. At the cap record the diagnosis, checkpoint and switch to independent work; no unchanged retries or a fifth full build in that cycle.
 

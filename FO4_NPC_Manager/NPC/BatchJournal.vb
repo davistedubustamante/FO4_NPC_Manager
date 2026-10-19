@@ -62,6 +62,10 @@ Namespace ExperimentalTransformation
             Next
             Return True
         End Function
+        Public Function VerifiedOutputPaths(npcKey As String) As String()
+            If Not ContainsVerifiedCheckpoint(npcKey) Then Throw New InvalidDataException("No verified checkpoint: " & npcKey)
+            Return state.Checkpoints.Single(Function(c) c.NpcKey = npcKey).Outputs.Select(Function(o) Path.Combine(root, o.RelativePath)).ToArray()
+        End Function
         Private Sub New(stagingPath As String, value As BatchJournalState, index As Integer)
             root = stagingPath
             journalRoot = Path.Combine(root, ".batch-journal")

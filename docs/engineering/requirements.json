@@ -145,6 +145,22 @@
         "Windows binary integration tests and CLI compilation pass",
         "Real FaceGen and game evidence remain separate from fixture checks"
       ]
+    },
+    {
+      "id": "R10",
+      "requirement": "Consolidate verified batch into one isolated ESP and generated resource bundle",
+      "status": "in_progress",
+      "dependsOn": [
+        "R09"
+      ],
+      "evidence": [],
+      "acceptance": [
+        "Reuse original multientry ESP writer, never a second serializer",
+        "Reopen two-NPC aggregate and compare canonical global identities/content/headers",
+        "Copy only checkpointed generated resources; reject conflicts",
+        "Incomplete target blocks aggregate; resume verifies aggregate hashes",
+        "Dedicated CLI exercises the two-NPC fixture in Windows CI"
+      ]
     }
   ]
 }

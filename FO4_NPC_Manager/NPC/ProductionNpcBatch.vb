@@ -39,12 +39,19 @@ Namespace ExperimentalTransformation
         Public Property Status As String = "EXPERIMENTAL-NOT-GAME-VALIDATED"
         Public Property StagingDirectory As String = ""
         Public Property ProfileSha256 As String = ""
+        Public Property BundleDirectory As String = ""
+        Public Property BundleStatus As String = "NOT-EXPORTED"
         Public Property Items As New List(Of NpcBatchItemResult)
     End Class
 
     ' Dedicated headless process only: original renderer/index/output context is process-global.
-    ' One isolated mod shard per NPC; aggregate ESP consolidation is a subsequent milestone.
+    ' Verified per-NPC shards feed the existing multi-entry writer for a single aggregate ESP.
     Public Module ProductionNpcBatch
+        Private Class BatchResources
+            Public CacheRoot As String
+            Public Ready As Boolean
+            Public Failure As String = ""
+        End Class
         Private ReadOnly processGate As New Object
         Public Function Run(profile As NpcBatchProfile, stagingParent As String, Optional resumeStage As String = Nothing) As NpcBatchResult
             SyncLock processGate
@@ -63,6 +70,7 @@ Namespace ExperimentalTransformation
             Dim seal = SealProfile(profile)
             Dim journal = If(String.IsNullOrEmpty(resumeStage), BatchJournal.Create(stagingParent, roots, seal), BatchJournal.Recover(resumeStage, seal))
             Dim result As New NpcBatchResult With {.StagingDirectory = journal.StagingDirectory, .ProfileSha256 = journal.ProfileSha256}
+            Dim resources As New BatchResources With {.CacheRoot = Path.Combine(journal.StagingDirectory, "resource-index")}
             Dim priorGame = Config_App.Current.Game
             Try
                 Config_App.Current.Game = Config_App.Game_Enum.Fallout4
@@ -85,9 +93,13 @@ Namespace ExperimentalTransformation
                             patch = IsolatedNpcPatch.WriteAppearancePatch(profile.DataRoot, profile.LoadOrder, target.SourcePlugin, target.ObjectId,
                                 attempt, target.Age, target.AdultEvidence, target.AppearancePreset, target.HumanRacePlugin, target.HumanRaceObjectId)
                         End If
+                        Dim sourceTag = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(target.SourcePlugin.ToUpperInvariant()))).Substring(0, 12)
+                        Dim uniquePatch = Path.Combine(attempt, "EXPERIMENTAL-NPC-" & sourceTag & "-" & target.ObjectId.ToString("X6") & ".esp")
+                        File.Move(patch, uniquePatch, False)
+                        patch = uniquePatch
                         Dim outputs As New List(Of String) From {patch, Path.Combine(attempt, "verification.json")}
                         If profile.RequireFaceGen Then
-                            outputs.AddRange(BakeStaged(profile, target, patch, attempt))
+                            outputs.AddRange(BakeStaged(profile, target, patch, attempt, resources))
                             item.Status = "FACEGEN-GENERATED-NOT-GAME-VALIDATED"
                         Else
                             item.Status = If(String.IsNullOrWhiteSpace(target.AppearancePreset), "RECORD-ONLY-VERIFIED", "APPEARANCE-RECORD-VERIFIED-NO-FACEGEN")
@@ -101,6 +113,18 @@ Namespace ExperimentalTransformation
                     End Try
                     VerifyStableInputs(profile, seal, journal)
                 Next
+                If result.Items.All(Function(item) item.Status <> "BLOCKED-PARTIAL-NOT-INSTALLED") Then
+                    Try
+                        result.BundleDirectory = AggregateNpcPatch.Export(profile, journal)
+                        VerifyStableInputs(profile, seal, journal)
+                        result.BundleStatus = If(profile.RequireFaceGen, "FACEGEN-BUNDLE-NOT-GAME-VALIDATED", "RECORDS-ONLY-BUNDLE-NOT-A-COMPLETE-CONVERSION")
+                    Catch ex As Exception
+                        result.BundleStatus = "BLOCKED-AGGREGATE-NOT-INSTALLED"
+                        result.Status = ex.GetType().Name & ": " & ex.Message
+                    End Try
+                Else
+                    result.BundleStatus = "BLOCKED-BY-INCOMPLETE-TARGETS"
+                End If
                 Dim reportPath = Path.Combine(journal.StagingDirectory, "report-" & Guid.NewGuid().ToString("N") & ".json")
                 Using stream As New FileStream(reportPath, FileMode.CreateNew, FileAccess.Write)
                     JsonSerializer.Serialize(stream, result, New JsonSerializerOptions With {.WriteIndented = True})
@@ -121,7 +145,7 @@ Namespace ExperimentalTransformation
             Throw New IOException("Batch quarantined because an original input changed.")
         End Sub
         Private Function SealProfile(profile As NpcBatchProfile) As Byte()
-            Dim identity As New StringBuilder(JsonSerializer.Serialize(profile))
+            Dim identity As New StringBuilder("production-batch-v2-aggregate" & vbLf & JsonSerializer.Serialize(profile))
             For Each name In profile.LoadOrder
                 If Path.GetFileName(name) <> name OrElse String.IsNullOrWhiteSpace(name) OrElse name.Contains("/") OrElse name.Contains("\") Then Throw New ArgumentException("Plugin basenames required.")
                 SealInput(Path.Combine(profile.DataRoot, name), identity)
@@ -141,7 +165,7 @@ Namespace ExperimentalTransformation
                 identity.AppendLine(Path.GetFullPath(filePath)).AppendLine(Convert.ToHexString(SHA256.HashData(stream)))
             End Using
         End Sub
-        Private Function BakeStaged(profile As NpcBatchProfile, target As NpcBatchTarget, patch As String, attempt As String) As IEnumerable(Of String)
+        Private Function BakeStaged(profile As NpcBatchProfile, target As NpcBatchTarget, patch As String, attempt As String, resources As BatchResources) As IEnumerable(Of String)
             Dim priorRoot = BakeOutputRoot.Elegida
             Dim priorCache = FilesDictionary_class.CacheDirectory
             Dim priorLog = Logger.Enabled
@@ -151,14 +175,23 @@ Namespace ExperimentalTransformation
             Try
                 Dim output = Directory.CreateDirectory(Path.Combine(attempt, "Data")).FullName
                 BakeOutputRoot.Elegida = output
-                FilesDictionary_class.CacheDirectory = Directory.CreateDirectory(Path.Combine(attempt, "index-cache")).FullName
+                FilesDictionary_class.CacheDirectory = Directory.CreateDirectory(resources.CacheRoot).FullName
                 Logger.Enabled = False
                 FaceGenBuilder.SkipDdsEncode = False
                 FaceGenBuilder.BakeFaceTexturesEnabled = True
                 FaceGenBuilder.WriteGPUSandboxOutput = False
-                FilesDictionary_class.Fill_DictionaryAsync(profile.DataRoot, Nothing, loadedPlugins:=profile.LoadOrder).GetAwaiter().GetResult()
-                Dim scanErrors = FilesDictionary_class.DrainScanErrors()
-                If scanErrors.Count <> 0 Then Throw New InvalidDataException("Resource index is incomplete: " & String.Join("; ", scanErrors.Take(10)))
+                If Not String.IsNullOrEmpty(resources.Failure) Then Throw New InvalidDataException("Previous resource-index failure (no unchanged retry): " & resources.Failure)
+                If Not resources.Ready Then
+                    Try
+                        FilesDictionary_class.Fill_DictionaryAsync(profile.DataRoot, Nothing, loadedPlugins:=profile.LoadOrder).GetAwaiter().GetResult()
+                        Dim scanErrors = FilesDictionary_class.DrainScanErrors()
+                        If scanErrors.Count <> 0 Then Throw New InvalidDataException("Resource index is incomplete: " & String.Join("; ", scanErrors.Take(10)))
+                        resources.Ready = True
+                    Catch ex As Exception
+                        resources.Failure = ex.Message
+                        Throw
+                    End Try
+                End If
                 Dim pm As New PluginManager()
                 pm.LoadAllPlugins(profile.DataRoot, profile.LoadOrder)
                 pm.MergeOverridePlugin(patch)

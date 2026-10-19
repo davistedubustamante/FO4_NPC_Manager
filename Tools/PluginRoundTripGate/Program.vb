@@ -21,6 +21,8 @@ Module Program
             rejected = True
         Catch ex As InvalidOperationException
             rejected = True
+        Catch ex As InvalidDataException
+            rejected = True
         Catch ex As IOException
             rejected = True
         End Try
@@ -38,7 +40,7 @@ Module Program
     Private Function Text(value As String) As Byte()
         Return Encoding.UTF8.GetBytes(value & ChrW(0))
     End Function
-    Private Sub Fixture(data As String, Optional templates As UShort = 0US)
+    Private Sub Fixture(data As String, Optional templates As UShort = 0US, Optional twoNpcs As Boolean = False)
         Dim game = Config_App.Game_Enum.Fallout4
         File.WriteAllBytes(Path.Combine(data, "Fallout4.esm"), GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String), 0, &H800UI, "fixture", False))
         Dim acbs(19) As Byte
@@ -58,13 +60,18 @@ Module Program
             .Concat(Sr("NAM7", BitConverter.GetBytes(1.0F))) _
             .Concat(Sr("NAM8", BitConverter.GetBytes(0UI))).ToArray()
         Dim npc = GenericPluginWriter.WrapRecord("NPC_", body, 0UI, &H1000800UI, 0UI, 0US, game)
+        Dim npcRecords As New List(Of Byte()) From {npc}
+        If twoNpcs Then
+            Dim secondBody = Sr("EDID", Text("SyntheticAdultSecond")).Concat(body.Skip(Sr("EDID", Text("SyntheticAdult")).Length)).ToArray()
+            npcRecords.Add(GenericPluginWriter.WrapRecord("NPC_", secondBody, 0UI, &H1000804UI, 0UI, 0US, game))
+        End If
         Dim race = GenericPluginWriter.WrapRecord("RACE", Sr("EDID", Text("AdultRaceFixture")), 0UI, &H1000801UI, 0UI, 0US, game)
         Dim voice = GenericPluginWriter.WrapRecord("VTYP", Sr("EDID", Text("QuestVoiceFixture")), 0UI, &H1000802UI, 0UI, 0US, game)
         Dim npcClass = GenericPluginWriter.WrapRecord("CLAS", Sr("EDID", Text("ClassFixture")), 0UI, &H1000803UI, 0UI, 0US, game)
-        Dim header = GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String) From {"Fallout4.esm"}, 8, &H804UI, "fixture", False)
+        Dim header = GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String) From {"Fallout4.esm"}, If(twoNpcs, 9, 8), &H805UI, "fixture", False)
         File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), header.Concat(GenericPluginWriter.BuildGrup("CLAS", New List(Of Byte()) From {npcClass})) _
             .Concat(GenericPluginWriter.BuildGrup("RACE", New List(Of Byte()) From {race})) _
-            .Concat(GenericPluginWriter.BuildGrup("NPC_", New List(Of Byte()) From {npc})) _
+            .Concat(GenericPluginWriter.BuildGrup("NPC_", npcRecords)) _
             .Concat(GenericPluginWriter.BuildGrup("VTYP", New List(Of Byte()) From {voice})).ToArray())
     End Sub
     Function Main(args As String()) As Integer
@@ -72,6 +79,7 @@ Module Program
             If args.Length <> 1 OrElse Directory.Exists(args(0)) Then Throw New ArgumentException("Expected new staging root.")
             Dim root = Path.GetFullPath(args(0))
             Dim data = Directory.CreateDirectory(Path.Combine(root, "inputs")).FullName
+            File.WriteAllText(Path.Combine(root, "EXPERIMENTAL-FIXTURES-DO-NOT-INSTALL.txt"), "Generated test plugins and placeholder Fallout4.esm only. No real game or FaceGen validation. Never install this artifact.")
             Config_App.Current.Game = Config_App.Game_Enum.Fallout4
             Fixture(data)
             Dim order = {"Fallout4.esm", "Fixture.esm"}
@@ -125,7 +133,7 @@ Module Program
                     New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H800UI, .Age = AgeEvidence.Adult, .AdultEvidence = "generated fixture",
                         .AppearancePreset = presetPath, .HumanRacePlugin = "Fixture.esm", .HumanRaceObjectId = &H801UI}}}
             Dim batch = ProductionNpcBatch.Run(profile, root)
-            Check(batch.Items(0).Status = "BLOCKED-PARTIAL-NOT-INSTALLED", "batch records failure without marking success")
+            Check(String.IsNullOrEmpty(batch.BundleDirectory) AndAlso batch.Items(0).Status = "BLOCKED-PARTIAL-NOT-INSTALLED", "batch records failure without marking success")
             Check(batch.Items(1).Status = "APPEARANCE-RECORD-VERIFIED-NO-FACEGEN", "batch continues through real appearance writer")
             Dim resumed = ProductionNpcBatch.Run(profile, root, batch.StagingDirectory)
             Check(resumed.Items(1).Status = "RESUMED-VERIFIED-OUTPUTS", "batch resumes verified result without rewriting")
@@ -138,9 +146,23 @@ Module Program
             Check(missingResources.Items.Single().Status = "BLOCKED-PARTIAL-NOT-INSTALLED", "missing real FaceGen resources cannot authorize conversion")
             Dim snapshots = Directory.GetFiles(Path.Combine(missingResources.StagingDirectory, ".batch-journal"), "*.json")
             Check(snapshots.Length = 1, "failed FaceGen attempt never checkpointed")
-            profile.RequireFaceGen = False
-            File.WriteAllText(Path.Combine(root, "cli-profile.json"), JsonSerializer.Serialize(profile))
-            File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-round-trip", .inGameValidated = False}))
+            Dim multiData = Directory.CreateDirectory(Path.Combine(root, "multi-inputs")).FullName
+            Fixture(multiData, twoNpcs:=True)
+            Dim multiProfile As New NpcBatchProfile With {.DataRoot = multiData, .LoadOrder = order.ToList(), .ProtectedRoots = New List(Of String) From {multiData}, .RequireFaceGen = False,
+                .Targets = New List(Of NpcBatchTarget) From {
+                    New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H800UI, .Age = AgeEvidence.Adult, .AdultEvidence = "generated fixture", .AppearancePreset = presetPath, .HumanRacePlugin = "Fixture.esm", .HumanRaceObjectId = &H801UI},
+                    New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H804UI, .Age = AgeEvidence.Adult, .AdultEvidence = "generated fixture", .AppearancePreset = presetPath, .HumanRacePlugin = "Fixture.esm", .HumanRaceObjectId = &H801UI}}}
+            Dim aggregate = ProductionNpcBatch.Run(multiProfile, root)
+            Check(aggregate.BundleStatus = "RECORDS-ONLY-BUNDLE-NOT-A-COMPLETE-CONVERSION", "two target batch exports one verified aggregate: " & aggregate.Status)
+            Dim aggregateReader As New PluginReader() : aggregateReader.Load(Path.Combine(aggregate.BundleDirectory, "EXPERIMENTAL-NPC-Batch.esp"))
+            Check(aggregateReader.Records.Count = 2, "aggregate contains both NPC overrides")
+            Check(aggregateReader.Records.Values.All(Function(r) (BitConverter.ToUInt32(r.GetSubrecord("ACBS").Value.Data, 0) And 1UI) = 1UI AndAlso r.Subrecords.Any(Function(sr) sr.Signature = "MSDV")), "aggregate retains female flags and appearance for both NPCs")
+            Dim aggregateResume = ProductionNpcBatch.Run(multiProfile, root, aggregate.StagingDirectory)
+            Check(aggregateResume.BundleDirectory = aggregate.BundleDirectory, "resume reuses hash-verified aggregate without rewriting")
+            File.AppendAllText(Path.Combine(aggregate.BundleDirectory, "EXPERIMENTAL-NPC-Batch.esp"), "tamper")
+            Reject(Sub() ProductionNpcBatch.Run(multiProfile, root, aggregate.StagingDirectory), "tampered aggregate blocks resume")
+            File.WriteAllText(Path.Combine(root, "cli-profile.json"), JsonSerializer.Serialize(multiProfile))
+            File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0
         Catch ex As Exception
