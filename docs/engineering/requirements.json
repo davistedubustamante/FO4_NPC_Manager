@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "branch": "dev/npc-transformation-experimental",
+  "requirements": [
+    {
+      "id": "R01",
+      "requirement": "Persistent autonomous engineering and recovery",
+      "status": "in_progress",
+      "dependsOn": [],
+      "evidence": [],
+      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+    },
+    {
+      "id": "R02",
+      "requirement": "Valid FO4 NPC plugin -> isolated ESP -> existing-reader verification",
+      "status": "in_progress",
+      "dependsOn": [
+        "R01"
+      ],
+      "evidence": [],
+      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+    },
+    {
+      "id": "R03",
+      "requirement": "Read-only Windows WoD metadata and resource inspection",
+      "status": "pending",
+      "dependsOn": [],
+      "evidence": [],
+      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+    },
+    {
+      "id": "R04",
+      "requirement": "Recurring Codex automation proposal, disabled until approval",
+      "status": "pending",
+      "dependsOn": [],
+      "evidence": [],
+      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+    },
+    {
+      "id": "R05",
+      "requirement": "Real collection load-order and adult evidence adapter",
+      "status": "blocked",
+      "dependsOn": [
+        "R02",
+        "R03"
+      ],
+      "evidence": [],
+      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+    },
+    {
+      "id": "R06",
+      "requirement": "Staged FaceGen integration and complete bundle verification",
+      "status": "blocked",
+      "dependsOn": [
+        "R05"
+      ],
+      "evidence": [],
+      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+    },
+    {
+      "id": "R07",
+      "requirement": "Body and equipment integration",
+      "status": "blocked",
+      "dependsOn": [
+        "R05"
+      ],
+      "evidence": [],
+      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+    },
+    {
+      "id": "R08",
+      "requirement": "Voice/dialogue/quest/CRU/WoD regression",
+      "status": "blocked",
+      "dependsOn": [
+        "R05",
+        "R06",
+        "R07"
+      ],
+      "evidence": [],
+      "acceptance": "Record actual command, exit status, evidence level and exact tested commit; never infer game compatibility from synthetic/build evidence."
+    }
+  ]
+}
