@@ -49,3 +49,12 @@ Run in the existing isolated Windows resource view (including an already configu
 4. `-Task AnalyzeNarrative` writes bounded static reference impact, never a claim of quest compatibility. `StartPreparation` requires `-PlanPath`, new `-StagingDirectory` and explicit `-BudgetBytes`; `NextPreparation` prepares one sequential page per call. `PausePreparation` / `ResumePreparation` persist preparation state.
 
 Preparation is metadata only: no global ESP/FaceGen execution is enabled. Its durable byte reservations control its own files before writes, retain interrupted-attempt charges and reject exhausted budgets. They are not a quota for the original ESP/FaceGen direct-path writers. Real collection trials require the separately authorized Windows profile, real assets and game regression evidence; do not upload the collection.
+
+## BA2 localization and authentic asset readiness
+
+The compiled original-library CLI now provides `--seal-localization`, `--discover-reviewed` and
+`--preflight-real`. See [LOCAL_AUTHENTIC_TRIAL.md](../../docs/engineering/LOCAL_AUTHENTIC_TRIAL.md)
+for private manifests, exact Windows commands, per-member BA2 source sealing, NIF/native DDS
+validation and the remaining strict-quota/export/runtime blockers. The Python inspector remains
+metadata-only; it does not gain a second BA2 payload decoder. No whole collection copy/upload
+or installation/activation is required for read-only preflight.

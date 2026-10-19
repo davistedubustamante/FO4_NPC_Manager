@@ -238,7 +238,8 @@
         "16 portable assertions passed for durable pre-write controlled-file quota, pause/resume/partial recovery. Does NOT constrain original path-based ESP/FaceGen writers; global mass writer remains disabled.",
         "38c7f2b mandatory sequential preparation/pause/resume/stale/partial-attempt checks completed before later R14 failure. Original ESP/FaceGen handles remain outside gateway quota.",
         "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification.",
-        "Continued bounded-stream gateway: pre-write length reservation, seek/SetLength bounds and durable completion. Local30 quota assertions at033045f; optional FaceGen NIF/DDS/material adapter and expanded exhaustion cases pending final Windows validation. Full direct ESP/cache/temp/native coverage NOT verified; no global worker enabled."
+        "Continued bounded-stream gateway: pre-write length reservation, seek/SetLength bounds and durable completion. Local30 quota assertions at033045f; optional FaceGen NIF/DDS/material adapter and expanded exhaustion cases pending final Windows validation. Full direct ESP/cache/temp/native coverage NOT verified; no global worker enabled.",
+        "205fb47 / https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39335263895 :169 mandatory Windows checks,117 portable assertions. Optional controlled FaceGen DDS path, directory deferral, exhaustion and no closed-scope fallback passed; NIF/material adapters compile. Full ESP/cache/temp/auxiliary/native coverage NOT verified; global worker disabled."
       ],
       "acceptance": [
         "Campaign/page journal, sequential bounded resource worker and verified resume",
@@ -302,7 +303,8 @@
         "R15"
       ],
       "evidence": [
-        "Read-only --preflight-real and local authentic resource protocol prepared; original NIF and native DDS validation with controlled DDS/negative fixtures passed at033045f. No authentic assets or in-game evidence available in Cloud; global certification remains pending."
+        "Read-only --preflight-real and local authentic resource protocol prepared; original NIF and native DDS validation with controlled DDS/negative fixtures passed at033045f. No authentic assets or in-game evidence available in Cloud; global certification remains pending.",
+        "Read-only selected BA2 NIF/DDS asset preflight implemented using original single-chunk APIs, source/member SHA provenance and pre-extraction bounds; final Windows validation pending. Unsupported layouts fail closed; no authentic resources uploaded or converted."
       ],
       "acceptance": [
         "Inventory reconciled with actual complete active GOTY/DLC/WoD profile; static and runtime-only coverage boundaries explicit",

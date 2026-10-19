@@ -44,8 +44,10 @@ approval and an available scheduling interface; none was activated.
 
 ### Continued BA2 / inherited-bucket iteration
 
-- R15 BA2 GNRL selected STRINGS/DLSTRINGS/ILSTRINGS, per-member/source hashes, explicit winner, original resolver/ESP reopen and local sealer passed the integrated Windows gate at033045f /39334233343. This removes the synthetic BA2-only admission blocker, not missing real GOTY/DLC/WoD evidence. Encoding exceptions and actual profile priority review remain pending.
+- R15 BA2 GNRL selected STRINGS/DLSTRINGS/ILSTRINGS, per-member/source hashes, explicit winner, original resolver/ESP reopen and local sealer passed the integrated Windows gate at 033045f /39334233343. This removes the synthetic BA2-only admission blocker, not missing real GOTY/DLC/WoD evidence. Encoding exceptions and actual profile priority review remain pending.
 - R11 Traits+Factions+Inventory+AIData combinations now pass original materializer/writer fixtures. Other categories, leveled choices and actual asset/runtime behavior stay blocked.
 - R14 reviewed discovery now integrates parser findings and static dependencies with classifier/pages. No static-to-runtime compatibility claim.
 - R13 gateway adds bounded streams and durable completion, including failure after full bytes and completion-quota exhaustion. Optional FaceGen NIF/DDS/material output adapter is in validation; full ESP/cache/temp/auxiliary coverage and real generation are not verified. Global mass worker remains disabled.
 - Local authentic resource preflight uses original NIF/native DDS readers, frozen target/preset inventory and source hashes. No real resources exist in Cloud. Follow LOCAL_AUTHENTIC_TRIAL.md on an authorized isolated Windows profile; do not upload the collection. No immediate game installation/activation is required for this read-only diagnostic.
+
+205fb47 /39335263895 passed169 Windows checks and117 portable assertions. Controlled FaceGen DDS output admission is verified in fixture scope; NIF generation and all ESP/cache/temp/auxiliary paths still do not have complete hard-quota certification. Read-only BA2 asset-member preflight (single-chunk GNRL/DX10) is in final Windows validation; real resources and multi-chunk routes remain blocked.

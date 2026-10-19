@@ -65,14 +65,33 @@ Construct `trial.private.json` with:
 - `CollectionIdentity`: exact WoD/CRU collection identity/version (not an assumed acronym).
 - `IsolatedProfileEvidence`: identification of the authorized isolated profile.
 - `Profile`: existing `NpcBatchProfile`, with `RequireFaceGen: true`, exactly one reviewed adult
-  male target, actual `SourcePlugin`/local `ObjectId`, compatible female `AppearancePreset`,
+  male target (`Age: 1`, reviewed `AdultEvidence`), actual `SourcePlugin`/local `ObjectId`, compatible female `AppearancePreset`,
   explicit `HumanRacePlugin`/`HumanRaceObjectId`, sealed localization and protected roots.
-- `Resources`: explicit existing local loose/VFS resources, each `Role`, `FilePath`, `Sha256`.
+- `Resources`: explicit existing local resources, each `Role`, `FilePath`, `Sha256` and optional `ResourcePath`.
   Required roles: `facegen-nif`, `facegen-dds`, `body-nif`, `equipment-nif`. Multiple DDS/equipment
-  entries are allowed; maximum 64 files, each <=32 MiB, aggregate <=128 MiB. Use the isolated
-  local resource view. Do not extract or duplicate the collection to satisfy this diagnostic.
+  entries are allowed; maximum 64 selected resources, each <=32 MiB, aggregate <=128 MiB.
+  `FilePath` points to a loose NIF/DDS or the original BA2 (<=16 GiB); `Sha256` seals that source
+  file/archive. For BA2, `ResourcePath` selects the exact existing member; no member is extracted
+  to disk. Original single-chunk GNRL/DX10 APIs are used, with pre-extraction stored/decompressed
+  byte bounds and 2D DDS limits. Multi-chunk/unsupported layouts remain blocked. Do not extract
+  or duplicate the collection to satisfy this diagnostic.
 
-Calculate selected-file hashes locally with `Get-FileHash -Algorithm SHA256`.
+Calculate selected-source hashes locally with `Get-FileHash -Algorithm SHA256`. For an archive
+member, hash the archive, not a separately extracted copy. Example resource entry (replace the
+path/member with one actually present in the local index):
+
+```json
+{
+  "Role": "facegen-dds",
+  "FilePath": "D:\\AuthorizedProfile\\Data\\SelectedResources.ba2",
+  "Sha256": "<SHA256 of the original archive>",
+  "ResourcePath": "Textures/Actors/Character/FaceCustomization/Fallout4.esm/<actual-member>.dds"
+}
+```
+
+The report records both archive/source and logical NIF/DDS SHA256 plus member identity. A
+matching source hash seals the bytes used for extraction; it does not prove that they match the
+female preset or body. Keep that distinction when supplying resources.
 
 ```powershell
 & $cli --preflight-real 'D:\FO4GlobalTrial\trial.private.json' 'D:\FO4GlobalTrial\new-preflight-001'
