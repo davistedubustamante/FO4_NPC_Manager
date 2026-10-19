@@ -8,6 +8,7 @@ on:
       - ".github/workflows/windows-build.yml"
       - "FO4_NPC_Manager/**"
       - "FO4_FaceTint_CLI/**"
+      - "Tools/DependencyOverlays/**"
       - "Tools/AdultTransformationGate/**"
       - "Tools/PluginRoundTripGate/**"
       - "Tools/NpcConversionCli/**"
@@ -20,6 +21,7 @@ on:
       - ".github/workflows/windows-build.yml"
       - "FO4_NPC_Manager/**"
       - "FO4_FaceTint_CLI/**"
+      - "Tools/DependencyOverlays/**"
       - "Tools/AdultTransformationGate/**"
       - "Tools/PluginRoundTripGate/**"
       - "Tools/NpcConversionCli/**"
@@ -88,6 +90,10 @@ jobs:
           path: FO4_NPC_Manager
           persist-credentials: false
 
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+
       - name: Fetch pinned source dependencies in required relative layout
         run: |
           $ErrorActionPreference = 'Stop'
@@ -121,6 +127,11 @@ jobs:
           foreach ($path in $layout) {
             if (!(Test-Path (Join-Path $env:GITHUB_WORKSPACE $path))) { throw "Missing $path" }
           }
+
+      - name: Apply verified additive ESP stream interface
+        run: |
+          python FO4_NPC_Manager/Tools/DependencyOverlays/apply_esp_stream.py FO4_Base_Library
+          if ($LASTEXITCODE -ne 0) { throw 'ESP writer overlay validation failed' }
 
       - name: Find VS 2026 MSBuild and validate v145
         run: |
@@ -181,6 +192,16 @@ jobs:
           $refusedStage = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/must-not-exist-authentic'
           $refused = Start-Process -FilePath $cli.FullName -ArgumentList @('--preflight-real', $invalidTrial, $refusedStage) -NoNewWindow -Wait -PassThru
           if ($refused.ExitCode -ne 1 -or (Test-Path $refusedStage)) { throw 'Authentic preflight must reject missing real resources without creating output' }
+
+      - name: Exercise controlled record pipeline and resume through actual CLI
+        run: |
+          $cli = Get-ChildItem 'FO4_NPC_Manager/Tools/NpcConversionCli/bin' -Filter 'NpcConversionCli.exe' -Recurse | Select-Object -First 1
+          $profile = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/controlled-cli-profile.json'
+          $stage = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/controlled-cli-output'
+          & $cli.FullName --controlled-record $profile $stage 1048576
+          if ($LASTEXITCODE -ne 0) { throw 'Controlled record CLI failed' }
+          & $cli.FullName --controlled-record $profile $stage 1048576 --resume
+          if ($LASTEXITCODE -ne 0) { throw 'Controlled resume CLI failed' }
 
       - name: Exercise conversion CLI on generated binary fixture
         run: |
@@ -290,7 +311,8 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Cannot record source revision: $source" }
             $revisions[$source] = $revision
           }
-          [ordered]@{ status='EXPERIMENTAL-UNTESTED-IN-GAME'; run=$env:GITHUB_RUN_ID; sources=$revisions } | ConvertTo-Json -Depth 4 | Set-Content 'build-output/provenance.json'
+          [ordered]@{ status='EXPERIMENTAL-UNTESTED-IN-GAME'; run=$env:GITHUB_RUN_ID; sources=$revisions; espStreamOverlay=(Get-Content -Raw 'FO4_NPC_Manager/Tools/DependencyOverlays/esp-stream-overlay.json' | ConvertFrom-Json) } | ConvertTo-Json -Depth 8 | Set-Content 'build-output/provenance.json'
+          Copy-Item 'FO4_NPC_Manager/Tools/DependencyOverlays' 'build-output/source-overlays' -Recurse
           Get-ChildItem 'build-output' -File -Recurse | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object FullName | ForEach-Object {
             $relative = [System.IO.Path]::GetRelativePath((Resolve-Path 'build-output'), $_.FullName)
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()

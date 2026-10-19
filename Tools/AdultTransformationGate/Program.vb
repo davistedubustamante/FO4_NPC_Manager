@@ -99,8 +99,10 @@ Module Program
             Console.WriteLine($"{campaignChecks} global campaign assertions passed")
             Dim recoveryChecks = BatchJournalTests.Run()
             Console.WriteLine($"{recoveryChecks} batch journal assertions passed")
+            Dim controlledChecks = ControlledFileOutputTests.Run()
+            Console.WriteLine($"{controlledChecks} controlled writer assertions passed")
             Dim report = TransformSynthetic({male, child, unknown, inherited, otherRace, female}, profile)
-            Dim json = JsonSerializer.Serialize(New With {.schemaVersion = 1, .checksPassed = checks, .campaignChecksPassed = campaignChecks, .quotaChecksPassed = quotaChecks, .recoveryChecksPassed = recoveryChecks, .batch = report}, New JsonSerializerOptions With {.WriteIndented = True})
+            Dim json = JsonSerializer.Serialize(New With {.schemaVersion = 1, .checksPassed = checks, .campaignChecksPassed = campaignChecks, .quotaChecksPassed = quotaChecks, .controlledWriterChecksPassed = controlledChecks, .recoveryChecksPassed = recoveryChecks, .batch = report}, New JsonSerializerOptions With {.WriteIndented = True})
             ' Never overwrite an existing report, and never write a plugin or game asset.
             Using output As New FileStream(args(0), FileMode.CreateNew, FileAccess.Write)
                 Using writer As New StreamWriter(output)

@@ -41,11 +41,13 @@ Namespace ExperimentalTransformation
                 entries.Add(New SaveNpcEspWriter.NpcOverrideEntry With {.Npc = npc, .SourcePluginName = target.SourcePlugin, .OriginalHeader = originals(fid).Header})
             Next
             strings.VerifyUnchanged()
-            Dim destination = Directory.CreateDirectory(Path.Combine(journal.StagingDirectory, "bundle-" & Guid.NewGuid().ToString("N"))).FullName
+            Dim destination = ControlledFileOutput.EnsureDirectory(Path.Combine(journal.StagingDirectory, "bundle-" & Guid.NewGuid().ToString("N")))
             Dim patch = Path.Combine(destination, "EXPERIMENTAL-NPC-Batch.esp")
-            Using reservation As New FileStream(patch, FileMode.CreateNew, FileAccess.Write)
-            End Using
-            Dim saved = SaveNpcEspWriter.SaveOverridePlugin(patch, Config_App.Game_Enum.Fallout4, False, False, entries, Nothing, Nothing, pm)
+            If Not ControlledFileOutput.IsActive Then
+                Using reservation As New FileStream(patch, FileMode.CreateNew, FileAccess.Write)
+                End Using
+            End If
+            Dim saved = SaveNpcEspWriter.SaveOverridePlugin(patch, Config_App.Game_Enum.Fallout4, False, False, entries, Nothing, Nothing, pm, outputWriter:=AddressOf ControlledEspOutput.Emit)
             If saved.Advertencias.Count <> 0 Then Throw New InvalidDataException("Aggregate writer warnings: " & String.Join("; ", saved.Advertencias))
             Dim reader As New PluginReader() : reader.Load(patch)
             If reader.Records.Count <> entries.Count Then Throw New InvalidDataException("Aggregate record count mismatch.")
@@ -72,21 +74,19 @@ Namespace ExperimentalTransformation
                     Dim relative = Path.GetRelativePath(sourceData, filePath)
                     If Path.IsPathRooted(relative) OrElse relative = ".." OrElse relative.StartsWith(".." & Path.DirectorySeparatorChar) Then Throw New InvalidDataException("Bundle source is outside staged Data.")
                     Dim destFile = Path.Combine(destination, "Data", relative)
-                    Directory.CreateDirectory(Path.GetDirectoryName(destFile))
+                    ControlledFileOutput.EnsureDirectory(Path.GetDirectoryName(destFile))
                     If File.Exists(destFile) Then
                         If Not SHA256.HashData(File.ReadAllBytes(destFile)).SequenceEqual(SHA256.HashData(File.ReadAllBytes(filePath))) Then Throw New InvalidDataException("Conflicting generated resource: " & relative)
                     Else
-                        File.Copy(filePath, destFile, False)
+                        ControlledFileOutput.CopyNew(filePath, destFile)
                         outputs.Add(destFile)
                     End If
                 Next
             Next
             Dim report = Path.Combine(destination, "bundle-verification.json")
-            Using stream As New FileStream(report, FileMode.CreateNew, FileAccess.Write)
-                JsonSerializer.Serialize(stream, New With {.status = "EXPERIMENTAL-AGGREGATE-NOT-GAME-VALIDATED", .npcCount = entries.Count,
+            ControlledFileOutput.WriteSerialized(report, Sub(stream) JsonSerializer.Serialize(stream, New With {.status = "EXPERIMENTAL-AGGREGATE-NOT-GAME-VALIDATED", .npcCount = entries.Count,
                     .requireFaceGen = profile.RequireFaceGen, .profileSha256 = journal.ProfileSha256,
-                    .verified = New String() {"existing-multi-entry-writer", "existing-reader-reopen", "canonical-global-FormID-content", "header-preservation", "staged-resource-conflict-check"}})
-            End Using
+                    .verified = New String() {"existing-multi-entry-writer", "existing-reader-reopen", "canonical-global-FormID-content", "header-preservation", "staged-resource-conflict-check"}}))
             outputs.Add(report)
             For Each target In profile.Targets
                 If Not journal.ContainsVerifiedCheckpoint(target.Key) Then Throw New InvalidDataException("Source checkpoint changed during aggregation.")

@@ -36,6 +36,30 @@ Namespace ExperimentalTransformation
                 Return RunExclusive(profile, stagingParent, resumeStage)
             End SyncLock
         End Function
+        ' One explicit diagnostic target only. Global execution remains disabled.
+        Public Function RunControlled(profile As NpcBatchProfile, workspace As String, budgetBytes As Long, Optional resumeExisting As Boolean = False) As NpcBatchResult
+            SyncLock processGate
+                If profile Is Nothing OrElse profile.Targets Is Nothing OrElse profile.Targets.Count <> 1 Then Throw New ArgumentException("Controlled trial requires exactly one target.")
+                If profile.RequireFaceGen Then Throw New InvalidOperationException("Full FaceGen/cache/native write audit is not verified; controlled record trial only.")
+                Dim roots = profile.ProtectedRoots.Concat({profile.DataRoot}).Concat(profile.Targets.Where(Function(t) Not String.IsNullOrEmpty(t.AppearancePreset)).Select(Function(t) t.AppearancePreset)).Concat(If(profile.Localization Is Nothing, Array.Empty(Of String)(), profile.Localization.Tables.Select(Function(t) t.FilePath))).ToList()
+                Dim full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(workspace))
+                For Each original In roots
+                    Dim source = Path.TrimEndingDirectorySeparator(Path.GetFullPath(original))
+                    If full.Equals(source, StringComparison.OrdinalIgnoreCase) OrElse full.StartsWith(source & Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) OrElse source.StartsWith(full & Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) Then Throw New IOException("Controlled workspace overlaps original input.")
+                Next
+                Using budget = If(resumeExisting, ReservedWriteBudget.Recover(full), ReservedWriteBudget.Create(full, budgetBytes, roots))
+                    Using scope = ControlledFileOutput.Begin(budget)
+                        Dim previousStage As String = Nothing
+                        If resumeExisting Then
+                            Dim stages = Directory.GetDirectories(full, "npc-experimental-*")
+                            If stages.Length <> 1 Then Throw New InvalidDataException("Expected one controlled batch journal.")
+                            previousStage = stages.Single()
+                        End If
+                        Return RunExclusive(profile, full, previousStage)
+                    End Using
+                End Using
+            End SyncLock
+        End Function
         Private Function RunExclusive(profile As NpcBatchProfile, stagingParent As String, resumeStage As String) As NpcBatchResult
             If profile Is Nothing OrElse profile.Targets Is Nothing OrElse profile.Targets.Count = 0 OrElse profile.Targets.Count > 25 Then Throw New ArgumentException("Expected 1..25 explicit targets.")
             If profile.Targets.Any(Function(t) t Is Nothing) OrElse profile.Targets.Select(Function(t) t.Key).Distinct().Count() <> profile.Targets.Count Then Throw New ArgumentException("Duplicate or null targets.")
@@ -74,7 +98,11 @@ Namespace ExperimentalTransformation
                         End If
                         Dim sourceTag = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(target.SourcePlugin.ToUpperInvariant()))).Substring(0, 12)
                         Dim uniquePatch = Path.Combine(attempt, "EXPERIMENTAL-NPC-" & sourceTag & "-" & target.ObjectId.ToString("X6") & ".esp")
-                        File.Move(patch, uniquePatch, False)
+                        If ControlledFileOutput.IsActive Then
+                            ControlledFileOutput.CopyNew(patch, uniquePatch)
+                        Else
+                            File.Move(patch, uniquePatch, False)
+                        End If
                         patch = uniquePatch
                         Dim outputs As New List(Of String) From {patch, Path.Combine(attempt, "verification.json")}
                         If profile.RequireFaceGen Then
@@ -105,9 +133,7 @@ Namespace ExperimentalTransformation
                     result.BundleStatus = "BLOCKED-BY-INCOMPLETE-TARGETS"
                 End If
                 Dim reportPath = Path.Combine(journal.StagingDirectory, "report-" & Guid.NewGuid().ToString("N") & ".json")
-                Using stream As New FileStream(reportPath, FileMode.CreateNew, FileAccess.Write)
-                    JsonSerializer.Serialize(stream, result, New JsonSerializerOptions With {.WriteIndented = True})
-                End Using
+                ControlledFileOutput.WriteSerialized(reportPath, Sub(stream) JsonSerializer.Serialize(stream, result, New JsonSerializerOptions With {.WriteIndented = True}))
                 Return result
             Finally
                 Config_App.Current.Game = priorGame
@@ -150,6 +176,7 @@ Namespace ExperimentalTransformation
             End Using
         End Sub
         Private Function BakeStaged(profile As NpcBatchProfile, target As NpcBatchTarget, patch As String, attempt As String, resources As BatchResources) As IEnumerable(Of String)
+            If ControlledFileOutput.IsActive Then Throw New InvalidOperationException("FaceGen native/cache paths are not yet admitted to the controlled worker.")
             Dim priorRoot = BakeOutputRoot.Elegida
             Dim priorCache = FilesDictionary_class.CacheDirectory
             Dim priorLog = Logger.Enabled

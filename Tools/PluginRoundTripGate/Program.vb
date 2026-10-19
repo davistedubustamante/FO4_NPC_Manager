@@ -524,6 +524,39 @@ Module Program
         End Using
 
     End Sub
+    Private Sub ControlledPipelineChecks(root As String)
+        Dim data = Directory.CreateDirectory(Path.Combine(root, "controlled-inputs")).FullName
+        Fixture(data, genericHuman:=True)
+        Dim original = File.ReadAllBytes(Path.Combine(data, "Fixture.esm"))
+        Dim profile As New NpcBatchProfile With {.DataRoot = data, .LoadOrder = New List(Of String) From {"Fallout4.esm", "Fixture.esm"}, .ProtectedRoots = New List(Of String) From {data}, .RequireFaceGen = False,
+            .Targets = New List(Of NpcBatchTarget) From {New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H800UI, .Age = AgeEvidence.Adult, .AdultEvidence = "controlled adult"}}}
+        File.WriteAllText(Path.Combine(root, "controlled-cli-profile.json"), JsonSerializer.Serialize(profile))
+        Dim workspace = Path.Combine(root, "controlled-pipeline")
+        Dim result = ProductionNpcBatch.RunControlled(profile, workspace, 1024 * 1024)
+        Check(result.BundleStatus = "RECORDS-ONLY-BUNDLE-NOT-A-COMPLETE-CONVERSION", "original ESP serializer and aggregate run through controlled output interface")
+        Using budget = ReservedWriteBudget.Recover(workspace)
+            Dim files = Directory.EnumerateFiles(workspace, "*", SearchOption.AllDirectories).Where(Function(p) Path.GetFileName(p) <> "budget-ledger.jsonl").ToArray()
+            Check(files.All(Function(p) budget.VerifiedNames.Contains(Path.GetRelativePath(workspace, p).Replace(Path.DirectorySeparatorChar, "/"c))), "every controlled ESP checkpoint copy and report has durable quota completion")
+            Check(files.Any(Function(p) p.EndsWith(".esp", StringComparison.Ordinal)) AndAlso files.All(Function(p) Not p.EndsWith(".bak", StringComparison.OrdinalIgnoreCase)), "controlled writer bypasses legacy backup/temp path operations")
+        End Using
+        Dim resumed = ProductionNpcBatch.RunControlled(profile, workspace, 1024 * 1024, True)
+        Check(resumed.Items.Single().Status = "RESUMED-VERIFIED-OUTPUTS", "quota-bound original batch journal resumes verified NPC")
+        Check(Directory.EnumerateFiles(workspace, "*", SearchOption.AllDirectories).Sum(Function(p) New FileInfo(p).Length) <= 1024 * 1024, "all controlled batch file bytes and ledger under aggregate ceiling")
+        Dim exhausted = Path.Combine(root, "controlled-exhaustion")
+        Try
+            Dim blocked = ProductionNpcBatch.RunControlled(profile, exhausted, 4096)
+            Check(blocked.BundleStatus.StartsWith("BLOCKED", StringComparison.Ordinal), "small quota cannot declare a complete controlled NPC bundle")
+        Catch ex As IOException
+            Check(True, "quota exhaustion stops pipeline before complete report")
+        End Try
+        Using budget = ReservedWriteBudget.Recover(exhausted)
+            Check(Directory.EnumerateFiles(exhausted, "*", SearchOption.AllDirectories).Sum(Function(p) New FileInfo(p).Length) <= 4096, "exhausted pipeline never exceeds reserved aggregate file-byte quota")
+        End Using
+        profile.RequireFaceGen = True
+        Reject(Sub() ProductionNpcBatch.RunControlled(profile, Path.Combine(root, "unadmitted-facegen"), 1024 * 1024), "unverified native FaceGen routes blocked before workspace creation")
+        Check(Not Directory.Exists(Path.Combine(root, "unadmitted-facegen")), "no output created for unadmitted native trial")
+        Check(File.ReadAllBytes(Path.Combine(data, "Fixture.esm")).SequenceEqual(original), "controlled exhaustion recovery and export preserve original plugin")
+    End Sub
     Private Sub UnmodeledRecordChecks(root As String)
         Dim data = Directory.CreateDirectory(Path.Combine(root, "unmodeled-inputs")).FullName
         Fixture(data, genericHuman:=True)
@@ -750,6 +783,7 @@ Module Program
             NarrativeChecks(root)
             UnmodeledRecordChecks(root)
             AssetValidationChecks(root)
+            ControlledPipelineChecks(root)
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0

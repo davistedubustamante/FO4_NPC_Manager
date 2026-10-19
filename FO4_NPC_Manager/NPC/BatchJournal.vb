@@ -86,11 +86,11 @@ Namespace ExperimentalTransformation
             Dim stagingPath = Path.Combine(parent, "npc-experimental-" & Guid.NewGuid().ToString("N"))
             ValidateOutside(stagingPath, protectedPaths)
             If Directory.Exists(stagingPath) OrElse File.Exists(stagingPath) Then Throw New IOException("Staging already exists.")
-            Directory.CreateDirectory(stagingPath)
+            ControlledFileOutput.EnsureDirectory(stagingPath)
             CheckAncestors(stagingPath)
             Dim value As New BatchJournalState With {.ProfileSha256 = identity, .ProtectedRoots = protectedPaths}
             Dim result As New BatchJournal(stagingPath, value, -1)
-            Directory.CreateDirectory(result.journalRoot)
+            ControlledFileOutput.EnsureDirectory(result.journalRoot)
             result.Save(value)
             Return result
         End Function
@@ -105,6 +105,7 @@ Namespace ExperimentalTransformation
             For i As Integer = 0 To files.Length - 1
                 If Path.GetFileName(files(i)) <> i.ToString("D8") & ".json" Then Throw New InvalidDataException("Journal sequence is incomplete.")
                 CheckAncestors(files(i))
+                If ControlledFileOutput.IsActive AndAlso Not ControlledFileOutput.IsVerified(files(i)) Then Throw New InvalidDataException("Incomplete quota-bound journal snapshot.")
                 value = JsonSerializer.Deserialize(Of BatchJournalState)(File.ReadAllText(files(i)))
                 If value Is Nothing OrElse value.FormatVersion <> 1 OrElse value.ProfileSha256 <> ProfileIdentity(profileBytes) Then Throw New InvalidDataException("Profile identity or journal format mismatch.")
                 If value.ProtectedRoots Is Nothing OrElse value.ProtectedRoots.Count = 0 Then Throw New InvalidDataException("Missing protectedPaths roots.")
@@ -150,10 +151,7 @@ Namespace ExperimentalTransformation
             ValidateOutside(root, nextState.ProtectedRoots)
             Dim destination = Path.Combine(journalRoot, (sequence + 1).ToString("D8") & ".json")
             ' CreateNew forbids overwrites/concurrent writers. A torn snapshot fails closed on resume.
-            Using stream As New FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None)
-                JsonSerializer.Serialize(stream, nextState)
-                stream.Flush(True)
-            End Using
+            ControlledFileOutput.WriteSerialized(destination, Sub(stream) JsonSerializer.Serialize(stream, nextState))
             sequence += 1
             state = nextState
         End Sub
@@ -162,6 +160,7 @@ Namespace ExperimentalTransformation
             Dim full = Path.GetFullPath(Path.Combine(root, relative))
             If Not IsWithin(full, root) OrElse full.Equals(root, pathComparison) OrElse IsWithin(full, journalRoot) Then Throw New InvalidDataException("Output escapes staging or enters journal.")
             CheckAncestors(full)
+            If ControlledFileOutput.IsActive AndAlso Not ControlledFileOutput.IsVerified(full) Then Throw New InvalidDataException("Output lacks a durable quota completion.")
             Using stream As New FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read)
                 Return Convert.ToHexString(SHA256.HashData(stream))
             End Using

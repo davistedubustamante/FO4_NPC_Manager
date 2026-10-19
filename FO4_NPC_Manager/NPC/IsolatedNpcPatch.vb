@@ -114,15 +114,17 @@ Namespace ExperimentalTransformation
             Dim expectedGlobal = SaveNpcEspWriter.CuerpoDeNpcSobrescrito(npc, Function(x) x, names.Count, canonicalWarnings)
             If canonicalWarnings.Count <> 0 Then Throw New InvalidDataException("Input cannot be verified without reviewing canonical findings.")
             strings.VerifyUnchanged()
-            Directory.CreateDirectory(destination)
+            ControlledFileOutput.EnsureDirectory(destination)
             Dim patch = Path.Combine(destination, If(appearance, "EXPERIMENTAL-Appearance.esp", "EXPERIMENTAL-RecordOnly.esp"))
             ' Reserve our own path; never let the existing writer overwrite a user's file.
-            Using reservation As New FileStream(patch, FileMode.CreateNew, FileAccess.Write)
-            End Using
+            If Not ControlledFileOutput.IsActive Then
+                Using reservation As New FileStream(patch, FileMode.CreateNew, FileAccess.Write)
+                End Using
+            End If
             Dim saved = SaveNpcEspWriter.SaveOverridePlugin(patch, Config_App.Game_Enum.Fallout4, False, False,
                 New List(Of SaveNpcEspWriter.NpcOverrideEntry) From {
                     New SaveNpcEspWriter.NpcOverrideEntry With {.Npc = npc, .SourcePluginName = sourcePlugin, .OriginalHeader = raw.Header}},
-                Nothing, Nothing, pm)
+                Nothing, Nothing, pm, outputWriter:=AddressOf ControlledEspOutput.Emit)
             Dim reopened As New PluginReader()
             reopened.Load(patch)
             If reopened.Records.Count <> 1 Then Throw New InvalidDataException("Patch must contain exactly one record.")
@@ -156,9 +158,7 @@ Namespace ExperimentalTransformation
                 .inputSha256 = hashes, .patchSha256 = HashFile(patch), .masters = reopened.Masters,
                 .verified = New String() {"existing-reader-reopen", "identity", "global-FormID-semantic-preservation", If(appearance, "existing-preset-overlay-save-shadow", If(inheritedTraits, "existing-frozen-category-materializer", "subrecord-structure-female-bit-only")), "header-preservation", "source-unchanged"},
                 .unvalidated = New String() {"adult-classifier", "FaceGen", "body", "equipment", "voices", "quests", "collection"}}
-            Using stream As New FileStream(Path.Combine(destination, "verification.json"), FileMode.CreateNew, FileAccess.Write)
-                JsonSerializer.Serialize(stream, report, New JsonSerializerOptions With {.WriteIndented = True})
-            End Using
+            ControlledFileOutput.WriteSerialized(Path.Combine(destination, "verification.json"), Sub(stream) JsonSerializer.Serialize(stream, report, New JsonSerializerOptions With {.WriteIndented = True}))
             strings.VerifyUnchanged()
             Return patch
             End Using

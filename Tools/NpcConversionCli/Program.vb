@@ -20,6 +20,15 @@ Module Program
                 End If
                 Return 0
             End If
+            If (args.Length = 4 OrElse args.Length = 5) AndAlso args(0) = "--controlled-record" Then
+                If args.Length = 5 AndAlso args(4) <> "--resume" Then Throw New ArgumentException("Expected --resume.")
+                If New FileInfo(args(1)).Length > 16L * 1024 * 1024 Then Throw New IOException("Trial profile too large.")
+                Dim profile = JsonSerializer.Deserialize(Of NpcBatchProfile)(File.ReadAllBytes(args(1)), New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True})
+                Dim result = ProductionNpcBatch.RunControlled(profile, args(2), Long.Parse(args(3), Globalization.CultureInfo.InvariantCulture), args.Length = 5)
+                Console.WriteLine(JsonSerializer.Serialize(result))
+                If result.BundleStatus.StartsWith("BLOCKED", StringComparison.Ordinal) Then Return 2
+                Return 0
+            End If
             If args.Length = 3 AndAlso args(0) = "--preflight-real" Then
                 If New FileInfo(args(1)).Length > 16L * 1024 * 1024 Then Throw New IOException("Trial profile exceeds 16 MiB.")
                 Dim trial = JsonSerializer.Deserialize(Of AuthenticTrialInput)(File.ReadAllBytes(args(1)), New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True})

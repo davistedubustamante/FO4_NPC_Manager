@@ -1,0 +1,17 @@
+{
+  "dependency": "FO4_Base_Library",
+  "pin": "8dc93e189cccfe026c128eb60d06c94fc949831b",
+  "file": "ESP/SaveNpcEspWriter.vb",
+  "originalSha256": "be92c1c60e9bf89ef9eaeecc19d09730ec1ee610169df81dbefaf73355467480",
+  "patchedSha256": "977fbe5688786092389e6e7cbc1b69571100f75b37ad0bbece1ab254e0e506e4",
+  "replacements": [
+    [
+      "Optional flstEntries As List(Of FlstRecordEntry) = Nothing) As SaveResult",
+      "Optional flstEntries As List(Of FlstRecordEntry) = Nothing,\n                                       Optional outputWriter As Action(Of String, Action(Of System.IO.Stream)) = Nothing) As SaveResult"
+    ],
+    [
+      "        BSA_BA2_Library_DLL.EscrituraEnElLugar.GuardarConCopia(\n            outputPath,\n            Sub(fs)",
+      "        Dim emit As Action(Of String, Action(Of System.IO.Stream)) = outputWriter\n        If emit Is Nothing Then emit = AddressOf BSA_BA2_Library_DLL.EscrituraEnElLugar.GuardarConCopia\n        emit(\n            outputPath,\n            Sub(fs)"
+    ]
+  ]
+}
