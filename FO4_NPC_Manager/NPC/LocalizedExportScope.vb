@@ -31,6 +31,7 @@ Namespace ExperimentalTransformation
         Private ReadOnly expected As New List(Of String)
         Private ReadOnly archiveEntries As New Dictionary(Of String, Dictionary(Of String, FilesDictionary_class.File_Location))(StringComparer.OrdinalIgnoreCase)
         Private disposed As Boolean
+        Private changedContext As Boolean
 
         Private Sub New()
             Monitor.Enter(contextGate)
@@ -42,6 +43,13 @@ Namespace ExperimentalTransformation
                 scope.priorRoot = FilesDictionary_class.FO4Path
                 scope.priorCache = FilesDictionary_class.CacheDirectory
                 If profile IsNot Nothing AndAlso profile.Tables IsNot Nothing AndAlso profile.Tables.Any(Function(t) t IsNot Nothing AndAlso Not String.IsNullOrEmpty(t.ResourcePath)) AndAlso scope.priorDictionary.Values.Any(Function(e) Not e.IsLosseFile) Then Throw New InvalidOperationException("BA2 export requires a dedicated headless resource context.")
+                If profile IsNot Nothing AndAlso profile.Tables IsNot Nothing Then
+                    For Each table In profile.Tables.Where(Function(t) t IsNot Nothing AndAlso Not String.IsNullOrEmpty(t.ResourcePath))
+                        Dim order As Integer
+                        If FilesDictionary_class.TryGetArchiveSourceOrder(Path.GetFileName(table.FilePath), order) Then Throw New InvalidOperationException("Selected archive is already mounted; use a dedicated headless resource context.")
+                    Next
+                End If
+                scope.changedContext = True
                 FilesDictionary_class.CacheDirectory = ""
                 FilesDictionary_class.Dictionary = New ConcurrentDictionary(Of String, FilesDictionary_class.File_Location)(StringComparer.OrdinalIgnoreCase)
                 FilesDictionary_class.FO4Path = ""
@@ -201,13 +209,15 @@ Namespace ExperimentalTransformation
             If disposed Then Return
             disposed = True
             Try
-                FilesDictionary_class.ClearBytesCache()
-                For Each archive In mounted
-                    FilesDictionary_class.UnregisterArchive(archive)
-                Next
-                FilesDictionary_class.Dictionary = priorDictionary
-                FilesDictionary_class.FO4Path = priorRoot
-                FilesDictionary_class.CacheDirectory = priorCache
+                If changedContext Then
+                    FilesDictionary_class.ClearBytesCache()
+                    For Each archive In mounted
+                        FilesDictionary_class.UnregisterArchive(archive)
+                    Next
+                    FilesDictionary_class.Dictionary = priorDictionary
+                    FilesDictionary_class.FO4Path = priorRoot
+                    FilesDictionary_class.CacheDirectory = priorCache
+                End If
                 For Each handle In tableHandles
                     handle.Dispose()
                 Next

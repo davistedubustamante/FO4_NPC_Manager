@@ -157,6 +157,18 @@ Module Program
         Dim reopened As New PluginReader() : reopened.Load(patch)
         Check(Encoding.UTF8.GetString(reopened.Records.Values.Single().GetSubrecord("FULL").Value.Data).StartsWith("Texto BA2 strings", StringComparison.Ordinal), "BA2 selected language exports and reopens through original ESP writer")
         Check(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive))) = archiveHash AndAlso Not Directory.Exists(Path.Combine(root, "Strings")), "BA2 unchanged and never extracted to disk")
+        Dim alternateArchive = Path.Combine(root, "alternate-priority.ba2")
+        Dim alternateBytes = entries(0).Data.ToArray()
+        Dim alternate = JsonSerializer.Deserialize(Of LocalizationProfile)(JsonSerializer.Serialize(manifest))
+        ' The declared source wins even when another archive containing the same key is present.
+        File.WriteAllBytes(alternateArchive, Ba2WriterGNRL.Build(New List(Of VirtualEntry) From {New VirtualEntry With {.Directory = "Strings", .FileName = "Fixture_spanish.strings", .Data = alternateBytes}}, New Ba2WriterGNRL.Options With {.Version = 1UI}))
+        alternate.Tables = alternate.Tables.Take(1).ToList()
+        alternate.Tables(0).FilePath = alternateArchive
+        alternate = LocalizedExportScope.SealSelection(alternate, {"Fallout4.esm", "Fixture.esm"})
+        Using selectedScope = LocalizedExportScope.Open(alternate, {"Fallout4.esm", "Fixture.esm"})
+            Check(FilesDictionary_class.TryGetEntry("Strings\Fixture_spanish.strings").BA2File = alternateArchive, "explicit resource priority selects declared archive, not another archive with same table key")
+        End Using
+
         manifest.Tables.Add(loose)
         Reject(Sub() LocalizedExportScope.Open(manifest, {"Fallout4.esm", "Fixture.esm"}), "loose and BA2 competing winners require explicit unambiguous selection")
         manifest.Tables.Remove(loose)
@@ -409,6 +421,9 @@ Module Program
         Check(written.GetSubrecord("AIDT").Value.Data(0) = 1, "original AIData materializer preserves effective behavior")
         Check(written.GetSubrecord("VMAD").Value.Data.SequenceEqual(script) AndAlso written.GetSubrecord("PKID").HasValue, "additional materialization preserves target scripts and noninherited packages")
         Check(File.ReadAllBytes(input).SequenceEqual(inputSnapshot), "additional category export leaves original plugin untouched")
+        Using report = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "inherited-buckets", "verification.json")))
+            Check(report.RootElement.GetProperty("templateCategoriesMaterialized").GetArrayLength() = 4, "export evidence identifies each inherited category rather than calling all inheritance Traits")
+        End Using
         RewriteFixture(data, Function(record) If(record.Header.FormID = &H1000804UI, record.Subrecords.SelectMany(Function(part) Sr(part.Signature, If(part.Signature = "TPLT", BitConverter.GetBytes(&H1000FFFUI), part.Data))).ToArray(), RecordBytes(record)))
         Reject(Sub() WriteRecordOnlyPatch(data, {"Fallout4.esm", "Fixture.esm"}, "Fixture.esm", &H804UI, Path.Combine(root, "inherited-dead"), AgeEvidence.Adult, "controlled adult"), "combined inheritance rejects incomplete category source")
         File.WriteAllBytes(input, inputSnapshot)
@@ -461,7 +476,7 @@ Module Program
         Reject(Sub() GlobalNpcDiscovery.WriteNarrativeReport(campaign, report, reportPath), "narrative report cannot overwrite prior evidence")
     End Sub
 
-    Private Sub AssetValidationChecks()
+    Private Sub AssetValidationChecks(root As String)
         Dim dds = DirectXTextureConversionHelper.Bgra32BytesToDdsBytes(4, 4, New Byte(63) {}, 28)
         Dim valid = LocalAuthenticTrial.ValidateAsset(dds, ".dds")
         Check(valid.Width = 4 AndAlso valid.Height = 4 AndAlso valid.Sha256.Length = 64, "native DDS encoder and decoder validate bounded controlled texture (not authentic FaceGen)")
@@ -472,6 +487,25 @@ Module Program
         Reject(Sub() LocalAuthenticTrial.ValidateAsset(New Byte() {1, 2, 3}, ".nif"), "original NIF reader rejects invalid resource")
         Reject(Sub() LocalAuthenticTrial.ValidateAsset(dds, ".nif"), "DDS cannot masquerade as FaceGen NIF")
         Reject(Sub() LocalAuthenticTrial.Inspect(New AuthenticTrialInput()), "incomplete authentic trial never produces conversion evidence")
+        File.WriteAllText(Path.Combine(root, "invalid-authentic-trial.json"), JsonSerializer.Serialize(New AuthenticTrialInput()))
+        Dim stage = Path.Combine(root, "asset-quota")
+        Dim outside = Path.Combine(root, "asset-quota-escape.dds")
+        Using budget = ReservedWriteBudget.Create(stage, 8192, {Path.Combine(root, "inputs")})
+            Using scope = FaceGenOutputAdapter.BeginControlledOutput(budget)
+                FaceGenOutputAdapter.EnsureDirectory(Path.Combine(stage, "Data"))
+                Check(Not Directory.Exists(Path.Combine(stage, "Data")), "FaceGen directory creation deferred until payload reservation")
+                FaceGenOutputAdapter.WriteBytes(Path.Combine(stage, "Data", "face.dds"), dds)
+                Check(budget.VerifiedNames.Contains("Data/face.dds"), "actual FaceGen DDS output adapter uses reserved completion checkpoint")
+                Reject(Sub() FaceGenOutputAdapter.WriteBytes(outside, dds), "FaceGen output adapter rejects outside path before writing")
+                Check(Not File.Exists(outside), "controlled FaceGen cannot create an escaped output")
+                Reject(Sub() FaceGenOutputAdapter.WriteBytes(Path.Combine(stage, "Data", "over.dds"), New Byte(8191) {}), "actual FaceGen byte adapter enforces quota before payload")
+                Check(Not File.Exists(Path.Combine(stage, "Data", "over.dds")), "quota failure produces no oversized FaceGen file")
+                Reject(Sub() FaceGenOutputAdapter.RejectUncontrolledDiagnostic(), "TGA diagnostic path fails closed in controlled output")
+                Reject(Sub() FaceGenOutputAdapter.BeginControlledOutput(budget), "concurrent FaceGen resource scopes rejected")
+            End Using
+            Reject(Sub() FaceGenOutputAdapter.WriteBytes(outside, dds), "closed controlled FaceGen scope never falls back to unbudgeted writer")
+        End Using
+
     End Sub
     Private Sub UnmodeledRecordChecks(root As String)
         Dim data = Directory.CreateDirectory(Path.Combine(root, "unmodeled-inputs")).FullName
@@ -698,7 +732,7 @@ Module Program
             TraitsChecks(root)
             NarrativeChecks(root)
             UnmodeledRecordChecks(root)
-            AssetValidationChecks()
+            AssetValidationChecks(root)
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0

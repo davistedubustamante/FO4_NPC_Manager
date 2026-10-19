@@ -71,7 +71,8 @@ Namespace ExperimentalTransformation
             If raw Is Nothing OrElse raw.Header.Signature <> "NPC_" OrElse raw.Header.IsDeleted Then Throw New InvalidOperationException("Expected a live NPC_ record.")
             Dim npc = RecordParsers.ParseNPC(raw, pm)
             If npc Is Nothing OrElse Not npc.Record.ConfigurationFlagsPresente Then Throw New InvalidOperationException("Incomplete NPC record.")
-            Dim inheritedTraits = npc.Record.ConfigurationTemplateFlags <> 0US
+            Dim originalTemplateFlags = npc.Record.ConfigurationTemplateFlags
+            Dim inheritedTraits = originalTemplateFlags <> 0US
             npc = StrictTraitsMaterialization.Materialize(npc, pm)
             ValidateParsedNpc(npc)
             Dim stringAudit = LocalizedExportScope.Audit(npc)
@@ -148,11 +149,12 @@ Namespace ExperimentalTransformation
             Next
             Dim report = New With {.schemaVersion = 1, .status = If(appearance, "EXPERIMENTAL-APPEARANCE-RECORD-NOT-FACEGEN-VALIDATED", "EXPERIMENTAL-RECORD-ONLY-NOT-IN-GAME-VALIDATED"),
                 .presetSha256 = presetHash, .localization = localization, .localizedStrings = stringAudit,
-                .traitsMaterialized = inheritedTraits,
+                .traitsMaterialized = NpcTemplateHelpers.HasTemplateFlag(originalTemplateFlags, NPC_TemplateCategory.Traits),
+                .templateFlagsBefore = originalTemplateFlags, .templateCategoriesMaterialized = StrictTraitsMaterialization.CategoryNames(originalTemplateFlags),
                 .stringDelivery = "inline-selected-language; original master string IDs retained in untouched inputs",
                 .adultEvidence = adultEvidence, .sourcePlugin = sourcePlugin, .objectId = objectId,
                 .inputSha256 = hashes, .patchSha256 = HashFile(patch), .masters = reopened.Masters,
-                .verified = New String() {"existing-reader-reopen", "identity", "global-FormID-semantic-preservation", If(appearance, "existing-preset-overlay-save-shadow", If(inheritedTraits, "existing-frozen-traits-materializer", "subrecord-structure-female-bit-only")), "header-preservation", "source-unchanged"},
+                .verified = New String() {"existing-reader-reopen", "identity", "global-FormID-semantic-preservation", If(appearance, "existing-preset-overlay-save-shadow", If(inheritedTraits, "existing-frozen-category-materializer", "subrecord-structure-female-bit-only")), "header-preservation", "source-unchanged"},
                 .unvalidated = New String() {"adult-classifier", "FaceGen", "body", "equipment", "voices", "quests", "collection"}}
             Using stream As New FileStream(Path.Combine(destination, "verification.json"), FileMode.CreateNew, FileAccess.Write)
                 JsonSerializer.Serialize(stream, report, New JsonSerializerOptions With {.WriteIndented = True})

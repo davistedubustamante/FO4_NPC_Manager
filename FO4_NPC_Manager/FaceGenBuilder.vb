@@ -2008,9 +2008,9 @@ Public Module FaceGenBuilder
         End If
 
         Try
-            Directory.CreateDirectory(Path.GetDirectoryName(outAbs))
+            ExperimentalTransformation.FaceGenOutputAdapter.EnsureDirectory(Path.GetDirectoryName(outAbs))
             Dim tWrite = Stopwatch.GetTimestamp()
-            nif.Save_As_Manolo(outAbs, Overwrite:=True)
+            ExperimentalTransformation.FaceGenOutputAdapter.WriteNif(outAbs, nif)
             PhaseAdd(BakePhase.NifWrite, tWrite)
         Catch ex As Exception
             result.Summary = $"Failed to write {nifFileName}: {ex.Message}"
@@ -2036,7 +2036,7 @@ Public Module FaceGenBuilder
                                                 detailPathOverride:=sseForcedDetail)
                 Dim nif2c = Path.Combine(dataPathForNif, FaceGenPaths.GeomDir(originPlugin),
                                          FaceGenPaths.GeomNifFileName(formIdLow, "_2c"))
-                nif.Save_As_Manolo(nif2c, Overwrite:=True)
+                ExperimentalTransformation.FaceGenOutputAdapter.WriteNif(nif2c, nif)
                 Logger.LogLazy(Function() $"[FACEBAKE][SSE] forced replacer sandbox -> {formIdLow:X8}_2c.NIF (+ _2c textures)")
 
                 ' _2d = MISMO pliegue pero desde GPU (la cadena facegen corrida por el shader), para confirmar CPU(_2c)==GPU(_2d).
@@ -2653,14 +2653,14 @@ Public Module FaceGenBuilder
             Dim rel = tintDir & $"{fgLocal:X8}{suffix}"
             Dim outFile = IO.Path.Combine(BakeOutputRoot.Current(), rel)
             If Not SkipDdsEncode Then
-                IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(outFile))
+                ExperimentalTransformation.FaceGenOutputAdapter.EnsureDirectory(IO.Path.GetDirectoryName(outFile))
                 ' ⛔ NO `File.WriteAllBytes`: pide CREATE_ALWAYS y sobre un destino OCULTO da ACCESS_DENIED, y
                 ' un archivo NUEVO rompe el VFS de MO2 / el hardlink de Vortex. Con un reemplazo de FaceGen ajeno
                 ' oculto, la escritura tiraba, el Catch hacia RecordTextureFailure+Continue y el BA2 salia con LA
                 ' CARA DEL OTRO MOD sin excepcion visible. El TGA de al lado ya iba por la ley
                 ' (`FaceTintCompositor`) y el DDS no. `Escribir` y no `GuardarConCopia`: es salida del HORNEADO,
                 ' miles por corrida y se rehornea. La ley vive en `Ba2_Bsa_Library\EscrituraEnElLugar.vb`.
-                BSA_BA2_Library_DLL.EscrituraEnElLugar.Escribir(outFile, Sub(fs) fs.Write(dds, 0, dds.Length))
+                ExperimentalTransformation.FaceGenOutputAdapter.WriteBytes(outFile, dds)
                 ' Identidad: es lo que le dice al packer que ESTE facetint es de ESTE horneado.
                 If result IsNot Nothing Then
                     result.SalidasDeTexturaEscritas = result.SalidasDeTexturaEscritas Or FaceGenPaths.SalidaDeTexturaDeCara.SseFaceTint
@@ -2752,9 +2752,9 @@ Public Module FaceGenBuilder
         If dds Is Nothing Then Return
         Dim rel = FaceGenPaths.TexturaDds(FaceGenPaths.CanalTint, originPlugin, fgLocal, "_2b")
         Dim outFile = IO.Path.Combine(BakeOutputRoot.Current(), rel)
-        IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(outFile))
+        ExperimentalTransformation.FaceGenOutputAdapter.EnsureDirectory(IO.Path.GetDirectoryName(outFile))
         ' ⛔ Misma ley que arriba (destino OCULTO / VFS): `EscrituraEnElLugar`, no `WriteAllBytes`.
-        BSA_BA2_Library_DLL.EscrituraEnElLugar.Escribir(outFile, Sub(fs) fs.Write(dds, 0, dds.Length))
+        ExperimentalTransformation.FaceGenOutputAdapter.WriteBytes(outFile, dds)
         MaybeWriteTgaBeside(outFile, w, h, gbra)
         Logger.LogLazy(Function() $"[FACEBAKE][SSE] facetint _2b GPU -> {rel} ({dds.Length}b)")
     End Sub
@@ -2864,9 +2864,9 @@ Public Module FaceGenBuilder
         If dds Is Nothing Then Return
         Dim rel = FaceGenPaths.TexturaDds(FaceGenPaths.CanalDiffuse, originPlugin, fgLocal, "_2d")
         Dim outFile = IO.Path.Combine(BakeOutputRoot.Current(), rel)
-        IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(outFile))
+        ExperimentalTransformation.FaceGenOutputAdapter.EnsureDirectory(IO.Path.GetDirectoryName(outFile))
         ' ⛔ Misma ley que arriba (destino OCULTO / VFS): `EscrituraEnElLugar`, no `WriteAllBytes`.
-        BSA_BA2_Library_DLL.EscrituraEnElLugar.Escribir(outFile, Sub(fs) fs.Write(dds, 0, dds.Length))
+        ExperimentalTransformation.FaceGenOutputAdapter.WriteBytes(outFile, dds)
         MaybeWriteTgaBeside(outFile, gpW, gpH, gpBuf)
         Logger.LogLazy(Function() $"[FACEBAKE][SSE] _2d pliegue PURO GPU (float) -> {rel} ({dds.Length}b, {w}x{h})")
     End Sub
@@ -2878,6 +2878,7 @@ Public Module FaceGenBuilder
         If Not WriteTGASandboxOutput OrElse bgra Is Nothing OrElse String.IsNullOrEmpty(ddsAbsPath) OrElse w <= 0 OrElse h <= 0 Then Return
         Try
             Dim tga = IO.Path.ChangeExtension(ddsAbsPath, "tga")
+            ExperimentalTransformation.FaceGenOutputAdapter.RejectUncontrolledDiagnostic()
             FaceTintCompositor.WriteBgraToTga(tga, bgra, w, h)
             Logger.LogLazy(Function() $"[FACEBAKE][SSE] wrote TGA '{tga}'")
         Catch ex As Exception
@@ -3288,9 +3289,9 @@ Public Module FaceGenBuilder
             Dim outFile = IO.Path.Combine(BakeOutputRoot.Current(), rel)
             If Not SkipDdsEncode Then
                 Try
-                    IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(outFile))
+                    ExperimentalTransformation.FaceGenOutputAdapter.EnsureDirectory(IO.Path.GetDirectoryName(outFile))
                     ' ⛔ Misma ley que arriba (destino OCULTO / VFS): `EscrituraEnElLugar`, no `WriteAllBytes`.
-                    BSA_BA2_Library_DLL.EscrituraEnElLugar.Escribir(outFile, Sub(fs) fs.Write(outDds, 0, outDds.Length))
+                    ExperimentalTransformation.FaceGenOutputAdapter.WriteBytes(outFile, outDds)
                     result?.TexturasEscritas.Add(outFile)   ' lo que este bake escribió: el barrido no lo toca
                     ' Y la IDENTIDAD, que es de lo UNICO que depende el packer para meter este DDS al
                     ' archive: lleva tag (SseHeadDiffuse) => nunca es "requerido" => si no esta marcado
@@ -3386,9 +3387,9 @@ Public Module FaceGenBuilder
                                         Dim ndir = FaceGenPaths.TexturaDir(FaceGenPaths.CanalNormal, originPlugin)
                                         Dim nRel = ndir & $"{fgLocal:X8}{suffix}"
                                         Dim nFile = IO.Path.Combine(BakeOutputRoot.Current(), nRel)
-                                        IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(nFile))
+                                        ExperimentalTransformation.FaceGenOutputAdapter.EnsureDirectory(IO.Path.GetDirectoryName(nFile))
                                         ' ⛔ Misma ley que arriba (destino OCULTO / VFS): `EscrituraEnElLugar`, no `WriteAllBytes`.
-                                        BSA_BA2_Library_DLL.EscrituraEnElLugar.Escribir(nFile, Sub(fs) fs.Write(mDds, 0, mDds.Length))
+                                        ExperimentalTransformation.FaceGenOutputAdapter.WriteBytes(nFile, mDds)
                                         result?.TexturasEscritas.Add(nFile)   ' idem: el barrido no lo toca
                                         ' Identidad, mismo motivo que el diffuse de arriba.
                                         If result IsNot Nothing AndAlso Not forced Then
@@ -3896,7 +3897,7 @@ Public Module FaceGenBuilder
             Return
         End If
         Dim outDir = Path.Combine(dataPath, FaceGenPaths.CustomizacionDir(originPlugin))
-        Try : Directory.CreateDirectory(outDir) : Catch : End Try
+        Try : ExperimentalTransformation.FaceGenOutputAdapter.EnsureDirectory(outDir) : Catch : End Try
 
         ' Los sufijos salen de FaceGenPaths.SufijoDe, igual que los del packer: el `_2` del sandbox lo
         ' decide UN solo lugar. Estaban escritos acá a mano y otra vez allá, y tenían que coincidir.
@@ -4102,7 +4103,7 @@ Public Module FaceGenBuilder
                 Dim outFile = Path.Combine(outDir, $"{formIdLow:X8}{entry.Suffix}")
                 Try
                     ' ⛔ Misma ley que arriba (destino OCULTO / VFS): `EscrituraEnElLugar`, no `WriteAllBytes`.
-                    BSA_BA2_Library_DLL.EscrituraEnElLugar.Escribir(outFile, Sub(fs) fs.Write(ddsBytes, 0, ddsBytes.Length))
+                    ExperimentalTransformation.FaceGenOutputAdapter.WriteBytes(outFile, ddsBytes)
                     ' Se anota ACÁ, donde se escribe: es lo que el barrido de restos usa para saber qué NO
                     ' borrar. Ver DeleteStaleFaceCustomizationArtifacts.
                     result?.TexturasEscritas.Add(outFile)
@@ -4135,6 +4136,7 @@ Public Module FaceGenBuilder
                 Try
                     Dim tgaSuffix = Path.ChangeExtension(entry.Suffix, "tga")
                     Dim outTga = Path.Combine(outDir, $"{formIdLow:X8}{tgaSuffix}")
+                    ExperimentalTransformation.FaceGenOutputAdapter.RejectUncontrolledDiagnostic()
                     FaceTintCompositor.WriteBgraToTga(outTga, bgra, ddW, ddH)
                     Logger.LogLazy(Function() $"[FACEBAKE] wrote '{outTga}'")
                 Catch ex As Exception
@@ -4161,9 +4163,10 @@ Public Module FaceGenBuilder
                         outputDxgiFormat:=entry.Dxgi,
                         generateMipMaps:=True, generatedMipLevels:=mips2b)
                     ' ⛔ Misma ley que arriba (destino OCULTO / VFS): `EscrituraEnElLugar`, no `WriteAllBytes`.
-                    BSA_BA2_Library_DLL.EscrituraEnElLugar.Escribir(Path.Combine(outDir, $"{{formIdLow:X8}}{{suffix2b}}"), Sub(fs) fs.Write(dds2b, 0, dds2b.Length))
+                    ExperimentalTransformation.FaceGenOutputAdapter.WriteBytes(Path.Combine(outDir, $"{{formIdLow:X8}}{{suffix2b}}"), dds2b)
                     Logger.LogLazy(Function() $"[FACEBAKE-GPU] wrote '{formIdLow:X8}{suffix2b}' slot={slotL2}")
                     If WriteTGASandboxOutput Then
+                        ExperimentalTransformation.FaceGenOutputAdapter.RejectUncontrolledDiagnostic()
                         FaceTintCompositor.WriteBgraToTga(Path.Combine(outDir, $"{formIdLow:X8}{Path.ChangeExtension(suffix2b, "tga")}"), gpuBgra, ddW, ddH)
                     End If
                 Catch ex As Exception

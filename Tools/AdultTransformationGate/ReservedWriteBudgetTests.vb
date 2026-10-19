@@ -82,6 +82,23 @@ Module ReservedWriteBudgetTests
             check(workspace.VerifiedNames.Length = 2, "recovery retries in a fresh reserved stream")
             check(Directory.EnumerateFiles(streamed, "*", SearchOption.AllDirectories).Sum(Function(p) New FileInfo(p).Length) <= 16384, "all controlled stream categories and ledger fit ceiling")
         End Using
+        Dim completionStage = Path.Combine(root, "completion-exhaustion")
+        Using workspace = ReservedWriteBudget.Create(completionStage, 4096, {original})
+            Dim nearFull(CInt(workspace.RemainingBytes - 500) - 1) As Byte
+            Dim nearHash = Convert.ToHexString(SHA256.HashData(nearFull))
+            reject(Sub() workspace.WriteStream("full.bin", nearFull.LongLength, nearHash, Sub(output) output.Write(nearFull)), "completion event exhaustion fails closed after charged payload")
+            check(File.Exists(Path.Combine(completionStage, "full.bin")) AndAlso workspace.VerifiedNames.Length = 0 AndAlso workspace.RemainingBytes >= 0, "matching full bytes without durable completion are not a checkpoint")
+        End Using
+        Using workspace = ReservedWriteBudget.Recover(completionStage)
+            check(workspace.ReservedNames.Length = 1 AndAlso workspace.VerifiedNames.Length = 0, "completion exhaustion recovery retains full charge without certifying output")
+        End Using
+        Using workspace = ReservedWriteBudget.Create(Path.Combine(root, "resource-names"), 8192, {original})
+            workspace.WriteNew("Data/FaceGeom/Mod adultas (versión 2).esp/head.nif", payload)
+            check(workspace.VerifiedNames.Length = 1, "realistic spaced Unicode plugin resource path admitted")
+            reject(Sub() workspace.WriteNew("Data/CON.dds", payload), "Windows device name cannot bypass resource reservation")
+            reject(Sub() workspace.WriteNew("Data/head.nif.", payload), "Windows trailing dot alias rejected")
+            reject(Sub() workspace.WriteNew("Data/FaceGeom /head.nif", payload), "Windows trailing directory space alias rejected")
+        End Using
         check(File.ReadAllText(Path.Combine(original, "game.txt")) = "unchanged", "original unchanged")
         File.AppendAllText(Path.Combine(stage, "budget-ledger.jsonl"), "interrupted reservation")
         reject(Sub() ReservedWriteBudget.Recover(stage), "torn ledger fails closed without refund")

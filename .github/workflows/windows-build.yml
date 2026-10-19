@@ -177,6 +177,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "BA2 selection CLI failed: $LASTEXITCODE" }
           & $cli.FullName --discover-reviewed "$env:RUNNER_TEMP/fo4-roundtrip/campaign-profile.json" "$env:RUNNER_TEMP/fo4-roundtrip/cli-reviewed-plan.json"
           if ($LASTEXITCODE -ne 0) { throw "Narrative classification CLI failed: $LASTEXITCODE" }
+          $invalidTrial = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/invalid-authentic-trial.json'
+          $refusedStage = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/must-not-exist-authentic'
+          $refused = Start-Process -FilePath $cli.FullName -ArgumentList @('--preflight-real', $invalidTrial, $refusedStage) -NoNewWindow -Wait -PassThru
+          if ($refused.ExitCode -ne 1 -or (Test-Path $refusedStage)) { throw 'Authentic preflight must reject missing real resources without creating output' }
 
       - name: Exercise conversion CLI on generated binary fixture
         run: |
@@ -215,6 +219,11 @@ jobs:
       - name: Expose fixture gate diagnosis in job summary
         if: always()
         run: |
+          $gateReport = Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/gate.json'
+          if (Test-Path $gateReport) {
+            $verified = Get-Content -Raw $gateReport | ConvertFrom-Json
+            Write-Output "::notice title=Experimental integration assertions::$($verified.checksPassed) mandatory Windows checks passed; binary/controlled assets only; real FaceGen and in-game validation false."
+          }
           foreach ($log in @('npc-manager-build.log', 'roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log', 'conversion-run.log', 'discovery-run.log', 'prepare-page-run.log', 'narrative-run.log')) {
             if (Test-Path $log) {
               "### $log" >> $env:GITHUB_STEP_SUMMARY

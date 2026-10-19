@@ -92,10 +92,11 @@ FaceGen, body or equipment files and installs nothing.
 Do not start the mass worker or treat the diagnostic batch as hard-quota protected. The current
 stream capability enforces pre-write reservations, seek/length/write bounds, durable completion
 and recovery for controlled serializers. Original `SaveOverridePlugin` opens its own path through
-`EscrituraEnElLugar`; FaceGen additionally calls `Save_As_Manolo`, DDS/TGA path writers and resource
-index/material cache paths. These still need stream adapters or a verified pre-existing OS storage
-isolation mechanism. The original NIF library exposes `Save_To_Bytes_Manolo`, a viable future
-adapter; it is not silently substituted here. No OS quota/VHD was installed, mounted or activated.
+`EscrituraEnElLugar`; FaceGen has an opt-in dedicated output adapter: original `Save_To_Bytes_Manolo` serializes NIF
+in memory; DDS/material bytes use exact reservations, directory creation is deferred, and TGA
+diagnostics fail closed. It is not enabled as a batch-wide quota: original ESP/cache/temp and
+other auxiliary paths still need verified stream adapters or pre-existing OS storage isolation.
+Actual NIF/FaceGen generation under this adapter remains unverified without local resources. No OS quota/VHD was installed, mounted or activated.
 
 After all those writes are constrained and tested, the next real trial must export one adult using
 the original preset/record/FaceGen pipelines, reopen ESP in the frozen load order, validate every

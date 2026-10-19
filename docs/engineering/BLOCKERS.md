@@ -41,3 +41,11 @@ approval and an available scheduling interface; none was activated.
 - Initial R15 revision was superseded/cancelled after queue delay. Final 71d329a passed Windows CI; earlier diagnosed failures are preserved in EVIDENCE.md. No dependency/toolchain changes were used to address runner availability.
 
 - Final selected loose-table, Traits-only, static graph and controlled preparation subroutes passed all 125 Windows assertions at 71d329a; remaining blockers above are real scope limits, not an unexplained build failure. Complete R15/R11/R14/R13 remain in_progress until their broader acceptance evidence exists.
+
+### Continued BA2 / inherited-bucket iteration
+
+- R15 BA2 GNRL selected STRINGS/DLSTRINGS/ILSTRINGS, per-member/source hashes, explicit winner, original resolver/ESP reopen and local sealer passed the integrated Windows gate at033045f /39334233343. This removes the synthetic BA2-only admission blocker, not missing real GOTY/DLC/WoD evidence. Encoding exceptions and actual profile priority review remain pending.
+- R11 Traits+Factions+Inventory+AIData combinations now pass original materializer/writer fixtures. Other categories, leveled choices and actual asset/runtime behavior stay blocked.
+- R14 reviewed discovery now integrates parser findings and static dependencies with classifier/pages. No static-to-runtime compatibility claim.
+- R13 gateway adds bounded streams and durable completion, including failure after full bytes and completion-quota exhaustion. Optional FaceGen NIF/DDS/material output adapter is in validation; full ESP/cache/temp/auxiliary coverage and real generation are not verified. Global mass worker remains disabled.
+- Local authentic resource preflight uses original NIF/native DDS readers, frozen target/preset inventory and source hashes. No real resources exist in Cloud. Follow LOCAL_AUTHENTIC_TRIAL.md on an authorized isolated Windows profile; do not upload the collection. No immediate game installation/activation is required for this read-only diagnostic.

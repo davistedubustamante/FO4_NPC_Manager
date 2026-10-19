@@ -7,6 +7,9 @@ Namespace ExperimentalTransformation
     Public Module StrictTraitsMaterialization
         ' Reuse original category buckets and frozen chain law. No alternate template resolver.
         ' The editor tolerates dead terminal pointers; autonomous export must fail closed instead.
+        Public Function CategoryNames(flags As UShort) As String()
+            Return [Enum].GetValues(Of NPC_TemplateCategory)().Where(Function(c) NpcTemplateHelpers.HasTemplateFlag(flags, c)).Select(Function(c) c.ToString()).ToArray()
+        End Function
         Public Function Materialize(npc As NPC_Data, pm As PluginManager) As NPC_Data
             If npc Is Nothing OrElse npc.Record Is Nothing Then Throw New InvalidDataException("Missing template NPC.")
             If npc.Record.ConfigurationTemplateFlags = 0US Then Return npc

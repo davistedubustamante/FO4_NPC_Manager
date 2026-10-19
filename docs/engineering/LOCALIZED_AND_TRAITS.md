@@ -35,18 +35,18 @@ Boundaries:
 - Tables: 1..4096 selected files, each at most 32 MiB, pool at most 128 MiB; no reparse paths.
 - Unsealed `.cpoverride` and persistent global localization/general encoding overrides are rejected. UTF8 output is scoped and restored.
 - A nonzero ID resolving to empty text still produces an original-writer finding and remains blocked; zero is the legitimate empty sentinel.
-- BA2-only strings are not yet admitted by this explicit manifest route. Reuse original archive/index APIs next; do not add a BA2 or string parser. Archive selection, bounded extraction and resource provenance need controlled positive fixtures.
+- Explicit BA2 GNRL sources now use original archive metadata, generation-sealed resource entries and individual in-memory extraction. `FilePath`/`Sha256` identify the archive, `ResourcePath` the exact selected-language table, and `ResourceSha256` the member bytes. Competing winners fail closed. No whole archive extraction or index-cache writes. See LOCAL_AUTHENTIC_TRIAL.md for local sealing commands. Controlled Windows fixtures pass at033045f; real collection evidence remains pending.
 - Mixed per-plugin inline encoding overrides and real GOTY/DLC resource combinations need additional explicit regression evidence. No broad collection certification from current fixtures.
 
 ## Strict original Traits materialization (R11)
 
 `StrictTraitsMaterialization` delegates to the existing `ProbeCategoryOwn`, `CongelarResolucion` and `MakeCategoryOwn`. It never implements a second chain resolver or materializer. Work occurs on a shadow; effective race/voice are copied through the original complete Traits bucket, the Traits bit is cleared, then the existing edit/preset/save path runs.
 
-Only Traits-only deterministic NPC-to-NPC chains are admitted in this iteration. Missing/deleted sources, cycles, duplicate pointer blocks, incomplete terminal race/voice, non-NPC/leveled-list sources and other inherited categories remain blocked. The editor's permissive dead-pointer fallback is not automatic export evidence. Child race is checked on the materialized effective NPC; unknown adulthood still requires explicit reviewed evidence.
+Traits, Factions, Inventory and AIData deterministic NPC-to-NPC chains, including combinations, are admitted through the original buckets. Missing/deleted sources, cycles, duplicate pointer blocks, incomplete terminal race/voice, non-NPC/leveled-list sources and all other inherited categories remain blocked. The editor's permissive dead-pointer fallback is not automatic export evidence. Child race is checked on the materialized effective NPC; unknown adulthood still requires explicit reviewed evidence.
 
 Fixtures preserve target nonempty VMAD, factions, inventory and packages while comparing canonical global content after master cleanup. NPC identities and original plugin hashes are checked. These are record-preservation tests, not proof of FaceGen, quests or game behavior.
 
-All exported NPCs and Traits sources must have a reviewed canonical parse. Unconsumed/opaque fields can hide FormIDs that master cleanup cannot remap. Reopening a file or comparing uninterpreted bytes cannot prove those references safe; admission rejects original canonical findings. Production/global admission fingerprints v7 reject older checkpoints/plans without deleting prior staging.
+All exported NPCs and Traits sources must have a reviewed canonical parse. Unconsumed/opaque fields can hide FormIDs that master cleanup cannot remap. Reopening a file or comparing uninterpreted bytes cannot prove those references safe; admission rejects original canonical findings. Production/global admission fingerprints v8 reject older checkpoints/plans without deleting prior staging.
 
 ## Static narrative impact (R14)
 
@@ -54,7 +54,7 @@ All exported NPCs and Traits sources must have a reviewed canonical parse. Uncon
 
 Reverse transitive references require individual review of linked NPCs. Existing category/adult policy distinguishes generic, unique, companion and special routes. Effective voice is recorded, not replaced. Parser findings and references outside scanned signatures remain visible; an outside-view reference is not certified missing. Record, edge, transitive impact and report byte budgets fail closed.
 
-`ReviewRequired` is static narrative triage, not admission for conversion. Absence of a static edge is not quest compatibility. Runtime aliases/conditions, dynamic Papyrus lookups, audio/dialogue delivery and actual quest/scene execution remain unvalidated. The graph is not yet a complete campaign execution-admission policy.
+`ReviewRequired` is static narrative triage, not admission for conversion. Absence of a static edge is not quest compatibility. Runtime aliases/conditions, dynamic Papyrus lookups, audio/dialogue delivery and actual quest/scene execution remain unvalidated. `--discover-reviewed` feeds findings and static impact into the existing classifier: incomplete analysis blocks, linked NPCs require review, and static candidates retain explicit runtime-unvalidated status. Preparation/resume revalidate this same route. It is not a complete campaign runtime compatibility policy.
 
 ## Quota-bound sequential preparation (R13)
 
@@ -69,9 +69,9 @@ CLI commands:
 
 Start binds the current input and plan hashes. Next prepares exactly one page through the existing production profile DTO. It validates fresh inputs, skips verified page files, retries partial/corrupt files in new charged attempts and retains earlier files. Pause/resume validate protected roots before opening state. No unattended process or recurring task is started.
 
-`ReservedWriteBudget` enforces a hard **logical file-byte ceiling for its own gateway writes**: checksummed ledger and full payload reservation are flushed before a new payload file is created. Ledger bytes count too. Exhaustion writes no new payload. Partial attempts retain their full charge; torn reservation logs fail closed. Exclusive locking prevents concurrent writers; recovery rehashes completed files. Limits: at most 2000 reservations, individual controlled payload at most 32 MiB, recovery ledger at most 1 MiB, immutable workspace ceiling 4 KiB..1 GiB.
+`ReservedWriteBudget` enforces a hard **logical file-byte ceiling for its own gateway writes**: checksummed ledger and full payload reservation are flushed before a new payload file is created. Stream Write/WriteByte/Seek/SetLength cannot exceed the reservation. Exact hash/length and flush must precede a durable completion event; matching bytes without that event are not checkpoints. Ledger bytes count too. Exhaustion writes no new payload. Partial attempts retain their full charge; torn reservation logs fail closed. Exclusive locking prevents concurrent writers; recovery rehashes completed files. Limits: at most 2000 reservations, individual controlled payload at most 32 MiB, recovery ledger at most 1 MiB, immutable workspace ceiling 4 KiB..1 GiB.
 
-This does **not** impose an OS allocation quota, account for filesystem overhead, or constrain arbitrary/native file handles. The original ESP/FaceGen writers use paths directly and do not yet honor this gateway. Therefore **no global mass ESP/FaceGen worker is enabled**. A verified boundary covering all writer/cache/temp/native paths is still required, including exhaustion/interruption tests with real generated resources. Estimates and post-write checks do not satisfy that requirement.
+This does **not** impose an OS allocation quota, account for filesystem overhead, or constrain arbitrary/native file handles. The original ESP, cache/temp and some auxiliary writers still use uncontrolled paths. An opt-in dedicated FaceGenOutputAdapter now routes NIF serialization, DDS/material bytes and deferred directories through the gateway, rejects diagnostic TGA and prevents unbudgeted fallback after scope closure. Its controlled DDS path is under Windows validation; actual NIF/FaceGen generation and whole-batch coverage remain unverified. Therefore **no global mass ESP/FaceGen worker is enabled**. A verified boundary covering all writer/cache/temp/native paths is still required, including exhaustion/interruption tests with real generated resources. Estimates and post-write checks do not satisfy that requirement.
 
 ## Local Windows bridge
 

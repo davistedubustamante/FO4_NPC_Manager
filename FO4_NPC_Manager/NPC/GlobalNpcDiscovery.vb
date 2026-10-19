@@ -80,7 +80,8 @@ Namespace ExperimentalTransformation
                         npc = StrictTraitsMaterialization.Materialize(npc, pm)
                         IsolatedNpcPatch.ValidateParsedNpc(npc)
                         If Not npc.Record.RacePresente Then Throw New InvalidDataException("Missing effective NPC race.")
-                        item.TraitsMaterialized = item.OriginalTemplateFlags <> 0US
+                        item.TraitsMaterialized = NpcTemplateHelpers.HasTemplateFlag(item.OriginalTemplateFlags, NPC_TemplateCategory.Traits)
+                        item.MaterializedCategories = StrictTraitsMaterialization.CategoryNames(item.OriginalTemplateFlags).ToList()
                         If raw.SourcePluginIsLocalized AndAlso input.Localization IsNot Nothing Then
                             Dim warnings As New List(Of String)
                             SaveNpcEspWriter.CuerpoDeNpcSobrescrito(npc, Function(x) x, input.LoadOrder.Count, warnings)

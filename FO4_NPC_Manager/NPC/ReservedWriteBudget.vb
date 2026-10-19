@@ -116,10 +116,10 @@ Namespace ExperimentalTransformation
         End Sub
         Public Sub SetPaused(value As Boolean)
             SyncLock writeGate
-            EnsureHealthy()
-            If value = Paused Then Return
-            Append(New Entry With {.Kind = If(value, "pause", "resume")})
-            pausedState = value
+                EnsureHealthy()
+                If value = Paused Then Return
+                Append(New Entry With {.Kind = If(value, "pause", "resume")})
+                pausedState = value
             End SyncLock
         End Sub
         Public Sub WriteNew(relativePath As String, bytes As Byte())
@@ -130,28 +130,28 @@ Namespace ExperimentalTransformation
         ' Direct-path/native writers are NOT admitted by this interface.
         Public Sub WriteStream(relativePath As String, length As Long, sha256 As String, writer As Action(Of Stream))
             SyncLock writeGate
-            EnsureHealthy()
-            If Paused Then Throw New InvalidOperationException("Workspace is paused.")
-            ValidateName(relativePath)
-            If writer Is Nothing OrElse length < 0 OrElse length > 32L * 1024 * 1024 OrElse sha256 Is Nothing OrElse Not System.Text.RegularExpressions.Regex.IsMatch(sha256, "\A[0-9A-Fa-f]{64}\z") Then Throw New ArgumentException("Bounded stream length, hash and writer required.")
-            If reservations.Count >= 2000 OrElse reservations.Any(Function(e) e.RelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase)) Then Throw New IOException("Reservation already exists or count budget exceeded.")
-            Dim destination = Path.Combine(root, relativePath)
-            CheckPath(destination)
-            If File.Exists(destination) OrElse IO.Directory.Exists(destination) Then Throw New IOException("Controlled output must be new.")
-            Dim entry As New Entry With {.Kind = "stream-reserve", .RelativePath = relativePath, .Length = length, .Sha256 = sha256.ToUpperInvariant()}
-            Append(entry, length)
-            reservations.Add(entry) : reserved += length
-            IO.Directory.CreateDirectory(Path.GetDirectoryName(destination))
-            Using output As New FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None)
-                Using bounded As New BoundedOutputStream(output, length)
-                    writer(bounded)
+                EnsureHealthy()
+                If Paused Then Throw New InvalidOperationException("Workspace is paused.")
+                ValidateName(relativePath)
+                If writer Is Nothing OrElse length < 0 OrElse length > 32L * 1024 * 1024 OrElse sha256 Is Nothing OrElse Not System.Text.RegularExpressions.Regex.IsMatch(sha256, "\A[0-9A-Fa-f]{64}\z") Then Throw New ArgumentException("Bounded stream length, hash and writer required.")
+                If reservations.Count >= 2000 OrElse reservations.Any(Function(e) e.RelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase)) Then Throw New IOException("Reservation already exists or count budget exceeded.")
+                Dim destination = Path.Combine(root, relativePath)
+                CheckPath(destination)
+                If File.Exists(destination) OrElse IO.Directory.Exists(destination) Then Throw New IOException("Controlled output must be new.")
+                Dim entry As New Entry With {.Kind = "stream-reserve", .RelativePath = relativePath, .Length = length, .Sha256 = sha256.ToUpperInvariant()}
+                Append(entry, length)
+                reservations.Add(entry) : reserved += length
+                IO.Directory.CreateDirectory(Path.GetDirectoryName(destination))
+                Using output As New FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None)
+                    Using bounded As New BoundedOutputStream(output, length)
+                        writer(bounded)
+                    End Using
+                    output.Flush(True)
                 End Using
-                output.Flush(True)
-            End Using
-            ' A matching payload without a durable completion is deliberately NOT a checkpoint.
-            If Not VerifyPayload(entry) Then Throw New InvalidDataException("Incomplete or incorrect streamed output; charge retained.")
-            Append(New Entry With {.Kind = "stream-complete", .RelativePath = relativePath, .Sha256 = entry.Sha256})
-            completedStreams.Add(relativePath)
+                ' A matching payload without a durable completion is deliberately NOT a checkpoint.
+                If Not VerifyPayload(entry) Then Throw New InvalidDataException("Incomplete or incorrect streamed output; charge retained.")
+                Append(New Entry With {.Kind = "stream-complete", .RelativePath = relativePath, .Sha256 = entry.Sha256})
+                completedStreams.Add(relativePath)
             End SyncLock
         End Sub
         Private Sub Append(entry As Entry, Optional payload As Long = 0)
@@ -180,8 +180,11 @@ Namespace ExperimentalTransformation
             End Using
         End Function
         Private Sub ValidateName(name As String)
-            If String.IsNullOrWhiteSpace(name) OrElse name.Length > 180 OrElse Path.IsPathRooted(name) OrElse name.Contains("\") OrElse name.Contains(":") OrElse name.Split("/"c).Any(Function(part) part = "" OrElse part = "." OrElse part = "..") OrElse name = "budget-ledger.jsonl" Then Throw New ArgumentException("Safe relative controlled output name required.")
-            If Not System.Text.RegularExpressions.Regex.IsMatch(name, "\A[A-Za-z0-9_./-]+\z") Then Throw New ArgumentException("Unsupported output characters.")
+            If String.IsNullOrWhiteSpace(name) OrElse name.Length > 180 OrElse Path.IsPathRooted(name) OrElse name.Contains("\") OrElse name.Contains(":") OrElse name.Split("/"c).Any(Function(part) part = "" OrElse part = "." OrElse part = "..") OrElse name.Equals("budget-ledger.jsonl", StringComparison.OrdinalIgnoreCase) Then Throw New ArgumentException("Safe relative controlled output name required.")
+            If Not System.Text.RegularExpressions.Regex.IsMatch(name, "\A[\p{L}\p{M}\p{N} _().'/-]+\z") Then Throw New ArgumentException("Unsupported output characters.")
+            For Each part In name.Split("/"c)
+                If part.EndsWith(" ", StringComparison.Ordinal) OrElse part.EndsWith(".", StringComparison.Ordinal) OrElse System.Text.RegularExpressions.Regex.IsMatch(part.Split("."c)(0).TrimEnd(" "c), "\A(CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])\z", System.Text.RegularExpressions.RegexOptions.IgnoreCase Or System.Text.RegularExpressions.RegexOptions.CultureInvariant) Then Throw New ArgumentException("Windows device/normalized alias output rejected.")
+            Next
         End Sub
         Private Sub EnsureHealthy()
             If faulted Then Throw New InvalidOperationException("Interrupted reservation; workspace requires recovery.")

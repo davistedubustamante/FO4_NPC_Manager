@@ -46,6 +46,7 @@ Namespace ExperimentalTransformation
         Public Property Deleted As Boolean
         Public Property OriginalTemplateFlags As UShort
         Public Property TraitsMaterialized As Boolean
+        Public Property MaterializedCategories As New List(Of String)
         Public Property TemplateFlags As UShort
         Public Property Factions As New List(Of String)
         Public Property HasScripts As Boolean
