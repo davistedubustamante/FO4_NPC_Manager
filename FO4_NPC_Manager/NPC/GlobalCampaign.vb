@@ -57,7 +57,7 @@ Namespace ExperimentalTransformation
         Public Property AdultEvidence As String = ""
     End Class
     Public Class CampaignPlan
-        Public Property Version As String = "global-plan-v2-admission"
+        Public Property Version As String = "global-plan-v3-live-adult-race"
         Public Property Status As String = "EXPERIMENTAL-PLAN-NOT-CONVERTED"
         Public Property InputSha256 As String = ""
         Public Property PlanSha256 As String = ""

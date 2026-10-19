@@ -213,7 +213,11 @@
       "status": "pending",
       "dependsOn": [
         "R12",
-        "R10"
+        "R10",
+        "R14",
+        "R15",
+        "R06",
+        "R07"
       ],
       "evidence": [],
       "acceptance": [
@@ -254,6 +258,26 @@
         "Resolve all required localized fields from isolated active resource view; missing tables/IDs fail closed",
         "Binary localized fixture export/readback preserves strings and script/voice references",
         "Real GOTY/DLC profile positive test recorded without uploading proprietary tables"
+      ]
+    },
+    {
+      "id": "R16",
+      "requirement": "End-to-end global Fallout 4 GOTY/DLC/active WoD conversion certification",
+      "status": "pending",
+      "dependsOn": [
+        "R13",
+        "R08",
+        "R11",
+        "R14",
+        "R15"
+      ],
+      "evidence": [],
+      "acceptance": [
+        "Inventory reconciled with actual complete active GOTY/DLC/WoD profile; static and runtime-only coverage boundaries explicit",
+        "Every target has verified route/result or explicit unresolved blocker; planned/flag-only cases never counted converted",
+        "Real FaceGen/body/equipment, missions/relationships/scripts/scenes/voices and special redesign evidence recorded",
+        "Storage quota exhaustion, pause/resume and isolation/reversal verified at campaign scale",
+        "No claim of global completion while child/unknown/special or missing-resource routes remain unverified"
       ]
     }
   ]

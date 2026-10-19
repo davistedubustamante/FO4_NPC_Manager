@@ -60,6 +60,7 @@ Namespace ExperimentalTransformation
                         chains(fid).Add(plugin.FileName)
                     Next
                 Next
+                Dim raceCache As New Dictionary(Of UInteger, Tuple(Of Boolean, Boolean))
                 Dim inventory As New List(Of DiscoveredNpc)
                 For Each raw In winners
                     Dim fid = raw.Header.FormID
@@ -82,11 +83,16 @@ Namespace ExperimentalTransformation
                         item.RaceObjectId = PluginManager.ToFaceGenLocalFormID(npc.Record.Race)
                         item.RaceKey = Key(item.RaceOrigin, item.RaceObjectId)
                         Dim raceRecord = pm.GetRecord(npc.Record.Race)
-                        If raceRecord Is Nothing OrElse raceRecord.Header.Signature <> "RACE" Then Throw New InvalidDataException("Missing race.")
-                        Dim race = TryCast(Canon.CanonRecords.Race(raceRecord, pm), Canon.RaceFO4)
-                        If race Is Nothing Then Throw New InvalidDataException("Unresolved FO4 race.")
-                        item.RaceFlagsKnown = race.DataFlagsPresente
-                        item.ChildRace = race.DataFlagsPresente AndAlso race.DataFlagsChild
+                        If raceRecord Is Nothing OrElse raceRecord.Header.Signature <> "RACE" OrElse raceRecord.Header.IsDeleted Then Throw New InvalidDataException("Missing or deleted race.")
+                        Dim flags As Tuple(Of Boolean, Boolean) = Nothing
+                        If Not raceCache.TryGetValue(npc.Record.Race, flags) Then
+                            Dim race = TryCast(Canon.CanonRecords.Race(raceRecord, pm), Canon.RaceFO4)
+                            If race Is Nothing Then Throw New InvalidDataException("Unresolved FO4 race.")
+                            flags = Tuple.Create(race.DataFlagsPresente, race.DataFlagsPresente AndAlso race.DataFlagsChild)
+                            raceCache.Add(npc.Record.Race, flags)
+                        End If
+                        item.RaceFlagsKnown = flags.Item1
+                        item.ChildRace = flags.Item2
                     Catch ex As Exception
                         item.ErrorDetail = ex.GetType().Name & ": " & ex.Message
                     End Try

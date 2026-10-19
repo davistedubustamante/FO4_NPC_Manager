@@ -81,7 +81,7 @@ Module Program
             .Concat(GenericPluginWriter.BuildGrup("NPC_", npcRecords)) _
             .Concat(GenericPluginWriter.BuildGrup("VTYP", New List(Of Byte()) From {voice})).ToArray())
     End Sub
-    Private Function CopyJournal(profile As NpcBatchProfile, parent As String, shards As String(), conflict As Boolean) As BatchJournal
+    Private Function CreateCopyJournal(profile As NpcBatchProfile, parent As String, shards As String(), conflict As Boolean) As BatchJournal
         Dim journal = BatchJournal.Create(parent, {profile.DataRoot}, Encoding.UTF8.GetBytes("controlled-copy-semantics-only"))
         For index As Integer = 0 To profile.Targets.Count - 1
             Dim attempt = Directory.CreateDirectory(Path.Combine(journal.StagingDirectory, "npc-" & index.ToString())).FullName
@@ -195,12 +195,12 @@ Module Program
             Reject(Sub() WriteAppearancePatch(lightData, order, "Fixture.esm", &H800UI, Path.Combine(root, "light-race-alias"), AgeEvidence.Adult,
                 "fixture", presetPath, "Fixture.esm", &H100801UI), "oversized ESL race identity cannot alias approval")
             Dim verifiedShards = aggregate.Items.Select(Function(item) Directory.GetFiles(item.AttemptDirectory, "*.esp").Single()).ToArray()
-            Dim copyJournal = CopyJournal(multiProfile, root, verifiedShards, False)
+            Dim copyJournal = CreateCopyJournal(multiProfile, root, verifiedShards, False)
             Dim copiedBundle = AggregateNpcPatch.Export(multiProfile, copyJournal)
             Dim copiedResource = Path.Combine(copiedBundle, "Data", "Textures", "copy-fixture.bin")
             Check(File.ReadAllText(copiedResource) = "identical fixture bytes", "aggregate copies checkpointed resource bytes without reading original assets")
             Check(Directory.GetFiles(Path.Combine(copiedBundle, "Data"), "*", SearchOption.AllDirectories).Length = 1, "identical shared resources deduplicated")
-            Dim conflictingJournal = CopyJournal(multiProfile, root, verifiedShards, True)
+            Dim conflictingJournal = CreateCopyJournal(multiProfile, root, verifiedShards, True)
             Reject(Sub() AggregateNpcPatch.Export(multiProfile, conflictingJournal), "conflicting staged resource paths block aggregate")
             Check(Not conflictingJournal.ContainsVerifiedCheckpoint(AggregateNpcPatch.CheckpointKey), "resource conflict never checkpoints partial bundle")
             File.AppendAllText(copiedResource, "tampered")
@@ -243,6 +243,9 @@ Module Program
             campaign.Policy.HumanRaces.Add("FIXTURE.ESM|000801")
             campaign.Policy.AdultEvidence("FIXTURE.ESM|000804") = "generated adult generic evidence"
             campaign.Policy.FemalePresets.Add(presetPath)
+            Dim baseCampaign As New CampaignInput With {.DataRoot = campaignData, .LoadOrder = order.ToList(), .ProtectedRoots = campaign.ProtectedRoots.ToList(), .Policy = campaign.Policy}
+            Dim commonRacePlan = GlobalNpcDiscovery.Scan(baseCampaign)
+            Check(commonRacePlan.Decisions.Count = 2 AndAlso commonRacePlan.Decisions.All(Function(d) d.Npc.RaceFlagsKnown), "shared race metadata resolves consistently for multiple winning NPCs")
             Dim approvedPlan = GlobalNpcDiscovery.Scan(campaign)
             Check(approvedPlan.Pages.Count = 1 AndAlso approvedPlan.Pages(0).Single() = "FIXTURE.ESM|000804", "discovery automatically plans eligible adult generic while excluding deleted NPC")
             Dim preparedPath = Path.Combine(root, "prepared-page.json")
@@ -256,6 +259,25 @@ Module Program
             Dim localizedPlan = GlobalNpcDiscovery.Scan(campaign)
             Check(localizedPlan.ExecutionBlockers.Contains("localized-load-order-export-not-integrated"), "localized masters explicitly block current export admission")
             Reject(Sub() GlobalNpcDiscovery.PreparePage(campaign, localizedPlan, 0, Path.Combine(root, "localized-page.json")), "localized input cannot prepare unusable production page")
+            File.WriteAllBytes(Path.Combine(campaignData, "Late.esp"), lateBytes)
+            Dim raceHeader = GenericPluginWriter.BuildTes4Header(Config_App.Game_Enum.Fallout4, False, False, New List(Of String) From {"Fixture.esm"}, 4, &H800UI, "race admission fixtures", False)
+            Dim deadRace = GenericPluginWriter.WrapRecord("RACE", Sr("EDID", Text("DeletedRace")), &H20UI, &H801UI, 0UI, 0US, Config_App.Game_Enum.Fallout4)
+            File.WriteAllBytes(Path.Combine(campaignData, "Late.esp"), raceHeader.Concat(GenericPluginWriter.BuildGrup("NPC_", New List(Of Byte()) From {lateRecord})).Concat(GenericPluginWriter.BuildGrup("RACE", New List(Of Byte()) From {deadRace})).ToArray())
+            Dim deadRacePlan = GlobalNpcDiscovery.Scan(campaign)
+            Check(deadRacePlan.Pages.Count = 0 AndAlso deadRacePlan.Decisions.Single(Function(d) d.Npc.ObjectId = &H804UI).Npc.ErrorDetail.Contains("deleted race"), "deleted winning race blocks global admission")
+            Reject(Sub() WriteAppearancePatch(campaignData, campaign.LoadOrder, "Fixture.esm", &H804UI, Path.Combine(root, "deleted-race-output"), AgeEvidence.Adult,
+                "explicit adult evidence", presetPath, "Fixture.esm", &H801UI), "direct production appearance export rejects deleted race")
+            Dim childView = DirectCast(FO4_Base_Library.Canon.CanonRecords.RaceNuevo(FO4_Base_Library.Canon.WbGame.Fallout4), FO4_Base_Library.Canon.RaceFO4)
+            childView.EditorID = "ChildRaceAdmissionFixture"
+            childView.DataFlagsChild = True
+            Dim childBody = FO4_Base_Library.Canon.WbWriter.EmitBody(childView.Node, childView.Context)
+            Dim childRaceRecord = GenericPluginWriter.WrapRecord("RACE", childBody, 0UI, &H801UI, 0UI, 0US, Config_App.Game_Enum.Fallout4)
+            File.WriteAllBytes(Path.Combine(campaignData, "Late.esp"), raceHeader.Concat(GenericPluginWriter.BuildGrup("NPC_", New List(Of Byte()) From {lateRecord})).Concat(GenericPluginWriter.BuildGrup("RACE", New List(Of Byte()) From {childRaceRecord})).ToArray())
+            Dim childPlan = GlobalNpcDiscovery.Scan(campaign)
+            Check(childPlan.Pages.Count = 0 AndAlso childPlan.Decisions.Single(Function(d) d.Npc.ObjectId = &H804UI).Category = "child", "actual child-race flag overrides contradictory adult policy")
+            Reject(Sub() WriteAppearancePatch(campaignData, campaign.LoadOrder, "Fixture.esm", &H804UI, Path.Combine(root, "child-race-output"), AgeEvidence.Adult,
+                "contradictory policy cannot authorize a child", presetPath, "Fixture.esm", &H801UI), "direct production appearance export cannot bypass child gate")
+            Check(Not Directory.Exists(Path.Combine(root, "child-race-output")), "child rejection writes no patch directory")
             File.WriteAllBytes(Path.Combine(campaignData, "Late.esp"), lateBytes)
             File.WriteAllText(Path.Combine(root, "campaign-profile.json"), JsonSerializer.Serialize(campaign))
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
