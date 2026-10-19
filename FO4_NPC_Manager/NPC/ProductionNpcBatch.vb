@@ -45,6 +45,7 @@ Namespace ExperimentalTransformation
             For Each target In profile.Targets
                 If Not String.IsNullOrWhiteSpace(target.AppearancePreset) Then roots.Add(Path.GetFullPath(target.AppearancePreset))
             Next
+            If profile.Localization IsNot Nothing Then roots.AddRange(profile.Localization.Tables.Select(Function(t) Path.GetFullPath(t.FilePath)))
             Dim seal = SealProfile(profile)
             Dim journal = If(String.IsNullOrEmpty(resumeStage), BatchJournal.Create(stagingParent, roots, seal), BatchJournal.Recover(resumeStage, seal))
             Dim result As New NpcBatchResult With {.StagingDirectory = journal.StagingDirectory, .ProfileSha256 = journal.ProfileSha256}

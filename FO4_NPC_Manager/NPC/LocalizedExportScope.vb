@@ -22,7 +22,7 @@ Namespace ExperimentalTransformation
         Private Shared ReadOnly contextGate As New Object
         Private priorDictionary As ConcurrentDictionary(Of String, FilesDictionary_class.File_Location)
         Private priorRoot As String
-        Private ReadOnly handles As New List(Of FileStream)
+        Private ReadOnly tableHandles As New List(Of FileStream)
         Private ReadOnly expected As New List(Of String)
         Private disposed As Boolean
 
@@ -50,7 +50,7 @@ Namespace ExperimentalTransformation
                         CheckPath(filePath)
                         If File.Exists(Path.ChangeExtension(filePath, ".cpoverride")) Then Throw New InvalidDataException("Unsealed encoding sidecar is not supported by this export route.")
                         Dim handle As New FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
-                        scope.handles.Add(handle)
+                        scope.tableHandles.Add(handle)
                         If handle.Length > 32L * 1024 * 1024 Then Throw New IOException("Language table exceeds 32 MiB.")
                         total += handle.Length
                         If total > 128L * 1024 * 1024 Then Throw New IOException("Language tables exceed 128 MiB.")
@@ -93,12 +93,12 @@ Namespace ExperimentalTransformation
             Return result
         End Function
         Public Sub VerifyUnchanged()
-            For i = 0 To handles.Count - 1
-                CheckPath(handles(i).Name)
-                If File.Exists(Path.ChangeExtension(handles(i).Name, ".cpoverride")) Then Throw New IOException("Encoding sidecar appeared during export.")
-                handles(i).Position = 0
-                If Convert.ToHexString(SHA256.HashData(handles(i))) <> expected(i) Then Throw New IOException("Language table changed during export.")
-                handles(i).Position = 0
+            For i = 0 To tableHandles.Count - 1
+                CheckPath(tableHandles(i).Name)
+                If File.Exists(Path.ChangeExtension(tableHandles(i).Name, ".cpoverride")) Then Throw New IOException("Encoding sidecar appeared during export.")
+                tableHandles(i).Position = 0
+                If Convert.ToHexString(SHA256.HashData(tableHandles(i))) <> expected(i) Then Throw New IOException("Language table changed during export.")
+                tableHandles(i).Position = 0
             Next
         End Sub
         Private Shared Sub CheckPath(filePath As String)
@@ -115,7 +115,7 @@ Namespace ExperimentalTransformation
                 FilesDictionary_class.ClearBytesCache()
                 FilesDictionary_class.Dictionary = priorDictionary
                 FilesDictionary_class.FO4Path = priorRoot
-                For Each handle In handles
+                For Each handle In tableHandles
                     handle.Dispose()
                 Next
             Finally

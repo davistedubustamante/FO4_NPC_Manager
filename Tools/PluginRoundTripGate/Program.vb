@@ -96,13 +96,13 @@ Module Program
         Next
         Return journal
     End Function
-    Private Function StringTable(filePath As String, value As String, Optional id As UInteger = 42UI) As LocalizationTable
+    Private Function StringTable(filePath As String, value As String, Optional id As UInteger = 42UI, Optional pluginName As String = "Fixture.esm") As LocalizationTable
         Dim bytes = Text(value)
         Using output As New BinaryWriter(File.Create(filePath))
             output.Write(1UI) : output.Write(CUInt(bytes.Length))
             output.Write(id) : output.Write(0UI) : output.Write(bytes)
         End Using
-        Return New LocalizationTable With {.Plugin = "Fixture.esm", .Kind = "strings", .FilePath = filePath, .Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(filePath)))}
+        Return New LocalizationTable With {.Plugin = pluginName, .Kind = "strings", .FilePath = filePath, .Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(filePath)))}
     End Function
     Private Sub LocalizationChecks(root As String)
         Dim data = Directory.CreateDirectory(Path.Combine(root, "localized-inputs")).FullName
@@ -145,6 +145,18 @@ Module Program
         Using proof = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "localized-positive", "verification.json")))
             Check(proof.RootElement.GetProperty("localizedStrings").EnumerateArray().Any(Function(e) e.GetProperty("Id").GetUInt32() = 42UI AndAlso e.GetProperty("SourcePlugin").GetString() = "Fixture.esm"), "localized verification traces source string ID and owner while delivering inline text")
         End Using
+        Dim localizedReader As New PluginReader() : localizedReader.Load(Path.Combine(data, "Fixture.esm"))
+        Dim sourceNpc = localizedReader.Records.Values.Single(Function(r) r.Header.Signature = "NPC_")
+        Dim lateHeader = GenericPluginWriter.BuildTes4Header(game, False, False, New List(Of String) From {"Fallout4.esm", "Fixture.esm"}, 2, &H800UI, "localized winning override", False)
+        lateHeader(8) = lateHeader(8) Or CByte(&H80)
+        Dim lateNpc = GenericPluginWriter.WrapRecord("NPC_", RecordBytes(sourceNpc), 0UI, &H1000800UI, 0UI, 0US, game)
+        File.WriteAllBytes(Path.Combine(data, "LocalizedLate.esp"), lateHeader.Concat(GenericPluginWriter.BuildGrup("NPC_", New List(Of Byte()) From {lateNpc})).ToArray())
+        Dim lateTable = StringTable(Path.Combine(tables, "LocalizedLate_spanish.strings"), "Nombre del override ganador", 42UI, "LocalizedLate.esp")
+        localization.Tables.Add(lateTable)
+        Dim winningPatch = WriteRecordOnlyPatch(data, order.Concat({"LocalizedLate.esp"}), "Fixture.esm", &H800UI, Path.Combine(root, "localized-winning-override"), AgeEvidence.Adult, "controlled adult", localization)
+        Dim winningReader As New PluginReader() : winningReader.Load(winningPatch)
+        Check(Encoding.UTF8.GetString(winningReader.Records.Values.Single().GetSubrecord("FULL").Value.Data).TrimEnd(ChrW(0)) = "Nombre del override ganador", "localized string resolves from winning override owner rather than originating master")
+        localization.Tables.Remove(lateTable)
         Dim profile As New NpcBatchProfile With {.DataRoot = data, .LoadOrder = order.ToList(), .ProtectedRoots = New List(Of String) From {data, tables}, .RequireFaceGen = False, .Localization = localization,
             .Targets = New List(Of NpcBatchTarget) From {New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H800UI, .Age = AgeEvidence.Adult, .AdultEvidence = "controlled adult"}}}
         Dim result = ProductionNpcBatch.Run(profile, root)
@@ -226,6 +238,7 @@ Module Program
                 Next
                 parts.AddRange(Sr("TPLT", BitConverter.GetBytes(&H1000800UI)))
                 parts.AddRange(Sr("SNAM", BitConverter.GetBytes(&H1000805UI).Concat(New Byte(3) {}).ToArray()))
+                parts.AddRange(Sr("COCT", BitConverter.GetBytes(1UI)))
                 parts.AddRange(Sr("CNTO", BitConverter.GetBytes(&H1000806UI).Concat(BitConverter.GetBytes(1UI)).ToArray()))
                 parts.AddRange(Sr("PKID", BitConverter.GetBytes(&H1000807UI)))
                 Return parts.ToArray()
