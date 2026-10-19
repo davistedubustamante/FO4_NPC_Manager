@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "requirement": "R13",
+  "globalMassExecutorEnabled": false,
+  "completeHardQuotaVerified": false,
+  "scope": "Logical payload and ledger bytes written through ReservedWriteBudget; filesystem allocation overhead and arbitrary handles are not certified",
+  "writers": [
+    {
+      "id": "reserved-gateway",
+      "source": "FO4_NPC_Manager/NPC/ReservedWriteBudget.vb",
+      "enforcement": "exact full reservation before payload; bounded stream; durable completion; retained partial charge",
+      "evidence": "117 portable assertions overall, including 37 quota assertions; Windows205fb47",
+      "remaining": "complete integration of every execution writer"
+    },
+    {
+      "id": "campaign-preparation",
+      "source": "FO4_NPC_Manager/NPC/CampaignPreparation.vb",
+      "enforcement": "gateway identity, page profiles, pause/resume and ledger",
+      "evidence": "Windows205fb47; preparation only",
+      "remaining": "no ESP/FaceGen worker enabled"
+    },
+    {
+      "id": "facegen-dds",
+      "source": "FO4_NPC_Manager/FaceGenBuilder.vb",
+      "enforcement": "seven byte call sites use opt-in FaceGenOutputAdapter; exact byte reservation, deferred directories, closed scope fails closed",
+      "evidence": "Windows205fb47 actual controlled DDS adapter, exhaustion and escape fixtures",
+      "remaining": "real full generator trial and whole-batch scope integration"
+    },
+    {
+      "id": "facegen-nif",
+      "source": "FO4_NPC_Manager/FaceGenBuilder.vb",
+      "enforcement": "two opt-in calls serialize with original Save_To_Bytes_Manolo before gateway output",
+      "evidence": "Windows205fb47 compilation only for NIF serialization route",
+      "remaining": "positive actual NIF generation under quota"
+    },
+    {
+      "id": "material-copies",
+      "source": "FO4_NPC_Manager/NpcMaterialResolver.vb",
+      "enforcement": "two opt-in byte call sites and deferred directories",
+      "evidence": "Windows205fb47 compilation; common byte sink tested",
+      "remaining": "actual generated material dependency trial"
+    },
+    {
+      "id": "diagnostic-tga",
+      "source": "FO4_NPC_Manager/FaceGenBuilder.vb",
+      "enforcement": "rejected before TGA writer in controlled output scope",
+      "evidence": "Windows205fb47 negative admission fixture",
+      "remaining": "no diagnostic TGA support inside quota"
+    },
+    {
+      "id": "original-esp-writer",
+      "source": "dependency:FO4_Base_Library/ESP/SaveNpcEspWriter.vb",
+      "enforcement": "NOT INTEGRATED: original path-based EscrituraEnElLugar.GuardarConCopia",
+      "evidence": "existing binary export/reopen, not quota proof",
+      "remaining": "stream/output-sink interface covering backup/journal/temp behavior before any controlled ESP execution"
+    },
+    {
+      "id": "batch-checkpoints",
+      "source": "FO4_NPC_Manager/NPC/BatchJournal.vb",
+      "enforcement": "NOT INTEGRATED: original batch snapshots use own FileStream",
+      "evidence": "existing journal recovery tests, not aggregate write quota",
+      "remaining": "route snapshots, progress, reports and all staging writes through gateway"
+    },
+    {
+      "id": "aggregate-esp-resources",
+      "source": "FO4_NPC_Manager/NPC/AggregateNpcPatch.vb",
+      "enforcement": "NOT INTEGRATED: original ESP writer, File.Copy and report streams",
+      "evidence": "existing conflict/tamper/round-trip fixtures, not quota proof",
+      "remaining": "reserve aggregate outputs and copied resources before writing"
+    },
+    {
+      "id": "resource-index-cache",
+      "source": "FO4_NPC_Manager/NPC/ProductionNpcBatch.vb",
+      "enforcement": "NOT INTEGRATED for execution: BakeStaged chooses path-based cache; localization scope separately disables its archive cache writes",
+      "evidence": "source call-site audit only",
+      "remaining": "disable execution disk caches or route cache/temp/package writers through bounded sink"
+    },
+    {
+      "id": "inventory-reports",
+      "source": "FO4_NPC_Manager/NPC/GlobalNpcDiscovery.vb",
+      "enforcement": "individual serialized size limit only; NOT an aggregate quota",
+      "evidence": "bounded metadata fixtures",
+      "remaining": "aggregate report/staging writer integration"
+    },
+    {
+      "id": "authentic-preflight-report",
+      "source": "FO4_NPC_Manager/NPC/LocalAuthenticTrial.vb",
+      "enforcement": "new workspace with 1 MiB gateway ceiling; input asset inspection is read-only",
+      "evidence": "original NIF/native DDS controlled validation; no authentic conversion",
+      "remaining": "actual local profile and genuine resource evidence"
+    }
+  ],
+  "nextImplementation": "Adapt original ESP output interface without a second serializer, integrate all checkpoint/aggregate/cache/temp/package/report paths, then test combined exhaustion/interruption/recovery before enabling a mass worker.",
+  "userIntervention": "No source upload needed for those code changes. Authentic asset/runtime evidence requires an authorized isolated Windows profile; no collection upload or original game/save change.",
+  "sourceCommit": "e56a6db",
+  "latestWindowsRun": "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39336072090",
+  "windowsChecks": 176,
+  "portableAssertions": 117,
+  "authenticResourcesVerified": false,
+  "inGameValidated": false
+}

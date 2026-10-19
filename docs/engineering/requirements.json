@@ -190,7 +190,8 @@
         "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification.",
         "38c7f2b Windows runtime: all mandatory localized/Traits checks passed before first narrative assertion failure, confirmed by LAST-CHECK and stack in https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39320528288 . Scope remains selected loose tables and Traits-only binary fixtures; not real collection certification.",
         "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification.",
-        "033045f / Windows39334233343: combined original Traits/Factions/Inventory/AIData materialization and preservation/negative fixtures passed; other categories/actual game remain blocked."
+        "033045f / Windows39334233343: combined original Traits/Factions/Inventory/AIData materialization and preservation/negative fixtures passed; other categories/actual game remain blocked.",
+        "e56a6db full Windows Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39336072090 :176 mandatory integration checks and117 portable assertions. Original BA2 localization/ESP reopen, four inherited buckets, static narrative admission, controlled output adapter and selected BA2 native-DDS preflight verified in fixture scope only. No authentic NIF/FaceGen/body/equipment or in-game certification; complete quota false (storage-writers.json)."
       ],
       "acceptance": [
         "Reuse existing chain resolver and NpcTemplateMaterializer; no parallel parser or inheritance implementation",
@@ -239,7 +240,8 @@
         "38c7f2b mandatory sequential preparation/pause/resume/stale/partial-attempt checks completed before later R14 failure. Original ESP/FaceGen handles remain outside gateway quota.",
         "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification.",
         "Continued bounded-stream gateway: pre-write length reservation, seek/SetLength bounds and durable completion. Local30 quota assertions at033045f; optional FaceGen NIF/DDS/material adapter and expanded exhaustion cases pending final Windows validation. Full direct ESP/cache/temp/native coverage NOT verified; no global worker enabled.",
-        "205fb47 / https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39335263895 :169 mandatory Windows checks,117 portable assertions. Optional controlled FaceGen DDS path, directory deferral, exhaustion and no closed-scope fallback passed; NIF/material adapters compile. Full ESP/cache/temp/auxiliary/native coverage NOT verified; global worker disabled."
+        "205fb47 / https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39335263895 :169 mandatory Windows checks,117 portable assertions. Optional controlled FaceGen DDS path, directory deferral, exhaustion and no closed-scope fallback passed; NIF/material adapters compile. Full ESP/cache/temp/auxiliary/native coverage NOT verified; global worker disabled.",
+        "e56a6db full Windows Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39336072090 :176 mandatory integration checks and117 portable assertions. Original BA2 localization/ESP reopen, four inherited buckets, static narrative admission, controlled output adapter and selected BA2 native-DDS preflight verified in fixture scope only. No authentic NIF/FaceGen/body/equipment or in-game certification; complete quota false (storage-writers.json)."
       ],
       "acceptance": [
         "Campaign/page journal, sequential bounded resource worker and verified resume",
@@ -260,7 +262,8 @@
         "38c7f2b found test assumed readable WbNode.Path contains signature; 71d329a records Subrecord explicitly and validates ALUA. Final Windows validation pending.",
         "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification.",
         "Canonical subrecord signature ALUA recorded separately from readable path; quest alias, scene, relationship, transitive review and effective voice fixtures passed. Runtime/dynamic coverage and execution-admission integration still pending.",
-        "033045f / Windows39334233343: --discover-reviewed integrates static findings and transitive dependencies with existing classifier/pages; CLI passed. No runtime mission/audio certification."
+        "033045f / Windows39334233343: --discover-reviewed integrates static findings and transitive dependencies with existing classifier/pages; CLI passed. No runtime mission/audio certification.",
+        "e56a6db full Windows Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39336072090 :176 mandatory integration checks and117 portable assertions. Original BA2 localization/ESP reopen, four inherited buckets, static narrative admission, controlled output adapter and selected BA2 native-DDS preflight verified in fixture scope only. No authentic NIF/FaceGen/body/equipment or in-game certification; complete quota false (storage-writers.json)."
       ],
       "acceptance": [
         "Original record APIs build quest/alias/scene/relationship/script/voice impact graph",
@@ -282,7 +285,8 @@
         "Current session implementation and binary/portable fixtures added; see EVIDENCE.md. Windows validation pending; no real collection/runtime certification.",
         "38c7f2b Windows runtime: all mandatory localized/Traits checks passed before first narrative assertion failure, confirmed by LAST-CHECK and stack in https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39320528288 . Scope remains selected loose tables and Traits-only binary fixtures; not real collection certification.",
         "71d329a full Windows CI Success: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39321569051 ; 125 integration checks, real fixture CLI/Windows launcher, licenses and bounded experimental artifacts. Portable91 assertions. Scope/boundaries in LOCALIZED_AND_TRAITS.md; no real game/collection certification.",
-        "033045f / Windows39334233343: original BA2 GNRL APIs resolve all three selected table kinds; ESP reopen, integrity/language/conflict/error fixtures and actual --seal-localization CLI passed. Original archive lifetime leak diagnosed/fixed. Real GOTY/DLC/WoD trials and encoding exceptions remain pending."
+        "033045f / Windows39334233343: original BA2 GNRL APIs resolve all three selected table kinds; ESP reopen, integrity/language/conflict/error fixtures and actual --seal-localization CLI passed. Original archive lifetime leak diagnosed/fixed. Real GOTY/DLC/WoD trials and encoding exceptions remain pending.",
+        "e56a6db full Windows Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39336072090 :176 mandatory integration checks and117 portable assertions. Original BA2 localization/ESP reopen, four inherited buckets, static narrative admission, controlled output adapter and selected BA2 native-DDS preflight verified in fixture scope only. No authentic NIF/FaceGen/body/equipment or in-game certification; complete quota false (storage-writers.json)."
       ],
       "acceptance": [
         "Reuse original localized string resolver and archive/index APIs, never a second string parser",
@@ -304,7 +308,8 @@
       ],
       "evidence": [
         "Read-only --preflight-real and local authentic resource protocol prepared; original NIF and native DDS validation with controlled DDS/negative fixtures passed at033045f. No authentic assets or in-game evidence available in Cloud; global certification remains pending.",
-        "Read-only selected BA2 NIF/DDS asset preflight implemented using original single-chunk APIs, source/member SHA provenance and pre-extraction bounds; final Windows validation pending. Unsupported layouts fail closed; no authentic resources uploaded or converted."
+        "Read-only selected BA2 NIF/DDS asset preflight implemented using original single-chunk APIs, source/member SHA provenance and pre-extraction bounds; final Windows validation pending. Unsupported layouts fail closed; no authentic resources uploaded or converted.",
+        "e56a6db full Windows Success https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39336072090 :176 mandatory integration checks and117 portable assertions. Original BA2 localization/ESP reopen, four inherited buckets, static narrative admission, controlled output adapter and selected BA2 native-DDS preflight verified in fixture scope only. No authentic NIF/FaceGen/body/equipment or in-game certification; complete quota false (storage-writers.json)."
       ],
       "acceptance": [
         "Inventory reconciled with actual complete active GOTY/DLC/WoD profile; static and runtime-only coverage boundaries explicit",
