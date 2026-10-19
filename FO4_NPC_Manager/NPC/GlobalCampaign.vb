@@ -26,6 +26,7 @@ Namespace ExperimentalTransformation
         Public Property DataRoot As String = ""
         Public Property LoadOrder As New List(Of String)
         Public Property ProtectedRoots As New List(Of String)
+        Public Property Localization As LocalizationProfile
         Public Property Policy As New CampaignPolicy
     End Class
     Public Class DiscoveredNpc
@@ -57,7 +58,7 @@ Namespace ExperimentalTransformation
         Public Property AdultEvidence As String = ""
     End Class
     Public Class CampaignPlan
-        Public Property Version As String = "global-plan-v4-filtered-discovery"
+        Public Property Version As String = "global-plan-v5-explicit-localization"
         Public Property Status As String = "EXPERIMENTAL-PLAN-NOT-CONVERTED"
         Public Property InputSha256 As String = ""
         Public Property PlanSha256 As String = ""
@@ -134,7 +135,7 @@ Namespace ExperimentalTransformation
         Friend Function CreateBatch(input As CampaignInput, plan As CampaignPlan, pageIndex As Integer) As NpcBatchProfile
             If plan.ExecutionBlockers.Contains("localized-load-order-export-not-integrated") Then Throw New InvalidOperationException("Localized masters need verified string/export integration before preparing an executable page.")
             If pageIndex < 0 OrElse pageIndex >= plan.Pages.Count Then Throw New ArgumentOutOfRangeException(NameOf(pageIndex))
-            Dim result As New NpcBatchProfile With {.DataRoot = input.DataRoot, .LoadOrder = input.LoadOrder.ToList(), .ProtectedRoots = input.ProtectedRoots.ToList(), .RequireFaceGen = True}
+            Dim result As New NpcBatchProfile With {.DataRoot = input.DataRoot, .LoadOrder = input.LoadOrder.ToList(), .ProtectedRoots = input.ProtectedRoots.ToList(), .RequireFaceGen = True, .Localization = input.Localization}
             For Each key In plan.Pages(pageIndex)
                 Dim d = plan.Decisions.Single(Function(x) x.Npc.Key = key)
                 If d.Route <> "adult-human-production-pipeline" Then Throw New InvalidDataException("Page contains ineligible target.")

@@ -36,3 +36,7 @@ The inspector is a helper, not a development gate. Continue independent code wor
 Reuse SDK/pinned caches; cloud working-set ceiling 2 GiB (observed tools 1.2 GiB + repository 22 MiB). Bounded new Windows artifacts at most 256 MiB plus portable matrix evidence at most 1 MiB/job; retention two days; do not delete existing user artifacts. Discovery writes bounded metadata only. Production v4/global plan v4 reject older admission fingerprints without deleting prior staging.
 
 On resume read AGENTS.md, requirements.json, BLOCKERS.md and EVIDENCE.md; inspect Git and actual CI, then select first viable pending requirement. Preserve user work. Initial attempt plus at most three diagnosis-driven retries per failing step, one active Windows revision. Do not rebuild unchanged passing code. No background work is implied by this plan or the disabled automation proposal.
+
+## Active session: R15 first
+
+Implement strict explicit-language loose-table resource scope over the pinned original resolver, hash/size/provenance checks, nonlocalized self-contained ESP output through the existing writer and canonical readback. Preserve original localized inputs/IDs; output stores selected text inline (does not retain external numeric IDs). Positive binary fixtures and negative missing/table/ID/master/language/hash cases are mandatory before accepting this route. BA2 selection/provenance and real GOTY/DLC evidence remain blocked. Next R11 original resolver/materializer; then independent R14/R13 admission work. No new installations or pin changes.

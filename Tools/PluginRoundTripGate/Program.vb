@@ -96,6 +96,98 @@ Module Program
         Next
         Return journal
     End Function
+    Private Function StringTable(filePath As String, value As String, Optional id As UInteger = 42UI) As LocalizationTable
+        Dim bytes = Text(value)
+        Using output As New BinaryWriter(File.Create(filePath))
+            output.Write(1UI) : output.Write(CUInt(bytes.Length))
+            output.Write(id) : output.Write(0UI) : output.Write(bytes)
+        End Using
+        Return New LocalizationTable With {.Plugin = "Fixture.esm", .Kind = "strings", .FilePath = filePath, .Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(filePath)))}
+    End Function
+    Private Sub LocalizationChecks(root As String)
+        Dim data = Directory.CreateDirectory(Path.Combine(root, "localized-inputs")).FullName
+        Fixture(data, genericHuman:=True)
+        Dim order = {"Fallout4.esm", "Fixture.esm"}
+        Dim original As New PluginReader() : original.Load(Path.Combine(data, "Fixture.esm"))
+        Dim game = Config_App.Game_Enum.Fallout4
+        Dim header = GenericPluginWriter.BuildTes4Header(game, True, False, New List(Of String) From {"Fallout4.esm"}, 8, &H805UI, "localized controlled fixture", False)
+        header(8) = header(8) Or CByte(&H80)
+        Dim allBytes = header.ToList()
+        For Each group In original.Records.Values.GroupBy(Function(r) r.Header.Signature)
+            Dim members As New List(Of Byte())
+            For Each record In group
+                Dim body As New List(Of Byte)
+                For Each part In record.Subrecords
+                    Dim bytes = If(part.Signature = "FULL", BitConverter.GetBytes(42UI), part.Data)
+                    If part.Signature = "VMAD" Then bytes = New Byte() {6, 0, 2, 0, 1, 0, 5, 0, 80, 114, 111, 98, 101, 0, 0, 0}
+                    body.AddRange(Sr(part.Signature, bytes))
+                Next
+                members.Add(GenericPluginWriter.WrapRecord(record.Header.Signature, body.ToArray(), record.Header.Flags, record.Header.FormID, record.Header.VCS1, record.Header.VCS2, game))
+            Next
+            allBytes.AddRange(GenericPluginWriter.BuildGrup(group.Key, members))
+        Next
+        File.WriteAllBytes(Path.Combine(data, "Fixture.esm"), allBytes.ToArray())
+        Dim tables = Directory.CreateDirectory(Path.Combine(root, "selected-tables")).FullName
+        Dim spanish = StringTable(Path.Combine(tables, "Fixture_spanish.strings"), "Adulta de prueba")
+        Dim english = StringTable(Path.Combine(tables, "Fixture_english.strings"), "Wrong fallback language")
+        Dim localization As New LocalizationProfile With {.Language = "spanish", .Tables = New List(Of LocalizationTable) From {spanish}}
+        Dim beforeDictionary = FilesDictionary_class.Dictionary
+        Dim beforeRoot = FilesDictionary_class.FO4Path
+        Dim patch = WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-positive"), AgeEvidence.Adult, "controlled adult", localization)
+        Dim reopened As New PluginReader() : reopened.Load(patch)
+        Dim written = reopened.Records.Values.Single()
+        Check(Not reopened.IsLocalized AndAlso Encoding.UTF8.GetString(written.GetSubrecord("FULL").Value.Data).TrimEnd(ChrW(0)) = "Adulta de prueba", "localized source emits explicitly selected text and reopens as self-contained inline ESP")
+        Check(ReferenceEquals(beforeDictionary, FilesDictionary_class.Dictionary) AndAlso beforeRoot = FilesDictionary_class.FO4Path, "localized context restores original process resources")
+        Check(written.GetSubrecord("VMAD").Value.Data.SequenceEqual(New Byte() {6, 0, 2, 0, 1, 0, 5, 0, 80, 114, 111, 98, 101, 0, 0, 0}), "localized round-trip preserves nonempty script attachment")
+        Dim localizedPm As New PluginManager() : localizedPm.LoadAllPlugins(data, order)
+        Check(localizedPm.ResolveFormID(BitConverter.ToUInt32(written.GetSubrecord("VTCK").Value.Data, 0), reopened) = &H1000802UI, "localized round-trip preserves voice FormID")
+        Check(File.ReadAllBytes(Path.Combine(data, "Fixture.esm")).SequenceEqual(allBytes), "localized master and original string IDs remain untouched")
+        Dim profile As New NpcBatchProfile With {.DataRoot = data, .LoadOrder = order.ToList(), .ProtectedRoots = New List(Of String) From {data, tables}, .RequireFaceGen = False, .Localization = localization,
+            .Targets = New List(Of NpcBatchTarget) From {New NpcBatchTarget With {.SourcePlugin = "Fixture.esm", .ObjectId = &H800UI, .Age = AgeEvidence.Adult, .AdultEvidence = "controlled adult"}}}
+        Dim result = ProductionNpcBatch.Run(profile, root)
+        Check(result.BundleStatus = "RECORDS-ONLY-BUNDLE-NOT-A-COMPLETE-CONVERSION", "localized input passes original production shard and aggregate writers")
+        Check(ProductionNpcBatch.Run(profile, root, result.StagingDirectory).Items.Single().Status = "RESUMED-VERIFIED-OUTPUTS", "localized production checkpoint resumes without regeneration")
+        Dim campaign As New CampaignInput With {.DataRoot = data, .LoadOrder = order.ToList(), .ProtectedRoots = New List(Of String) From {data}, .Localization = localization}
+        campaign.Policy.HumanRaces.Add("FIXTURE.ESM|000801")
+        campaign.Policy.AdultEvidence.Add("FIXTURE.ESM|000800", "controlled adult")
+        Dim plan = GlobalNpcDiscovery.Scan(campaign)
+        Check(plan.ExecutionBlockers.Count = 0 AndAlso plan.Decisions.Single().Npc.ErrorDetail = "", "global discovery removes localized admission only with explicit verified resource context")
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-no-selection"), AgeEvidence.Adult, "controlled adult"), "localized export without explicit language remains blocked")
+        Dim missingTablePath = spanish.FilePath
+        spanish.FilePath = Path.Combine(root, "absent", "Fixture_spanish.strings")
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-absent-table"), AgeEvidence.Adult, "controlled adult", localization), "missing language table cannot use ambient fallback")
+        spanish.FilePath = missingTablePath
+        spanish = StringTable(spanish.FilePath, "Unrelated ID", 99UI)
+        localization.Tables(0) = spanish
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-missing-id"), AgeEvidence.Adult, "controlled adult", localization), "absent localized ID fails before ESP creation")
+        Check(Not Directory.Exists(Path.Combine(root, "localized-missing-id")), "unresolved strings produce no output directory")
+        Check(GlobalNpcDiscovery.Scan(campaign).Decisions.Single().Npc.ErrorDetail.Contains("Localized NPC"), "global inventory blocks NPC with unresolved string instead of silently scheduling")
+        spanish = StringTable(spanish.FilePath, "Adulta de prueba") : localization.Tables(0) = spanish
+        localization.Language = "english"
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-wrong-language"), AgeEvidence.Adult, "controlled adult", localization), "language mismatch cannot fall back to other installed table")
+        localization.Language = "spanish"
+        localization.Tables.Add(spanish)
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-ambiguous"), AgeEvidence.Adult, "controlled adult", localization), "duplicate table provenance is rejected")
+        localization.Tables.RemoveAt(1)
+        spanish.Sha256 = New String("0"c, 64)
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-hash"), AgeEvidence.Adult, "controlled adult", localization), "incorrect table hash fails closed")
+        spanish.Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(spanish.FilePath)))
+        spanish.Kind = "dlstrings"
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-kind"), AgeEvidence.Adult, "controlled adult", localization), "wrong table kind is not treated as STRINGS")
+        spanish.Kind = "strings"
+        spanish.Plugin = "Missing.esm"
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-owner"), AgeEvidence.Adult, "controlled adult", localization), "table owner must belong to explicit masters and load order")
+        spanish.Plugin = "Fixture.esm"
+        Reject(Sub() WriteRecordOnlyPatch(data, {"Fixture.esm"}, "Fixture.esm", &H800UI, Path.Combine(root, "localized-master"), AgeEvidence.Adult, "controlled adult", localization), "localized plugin missing its master is rejected")
+        File.WriteAllBytes(spanish.FilePath, New Byte() {1, 2, 3})
+        spanish.Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(spanish.FilePath)))
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-corrupt"), AgeEvidence.Adult, "controlled adult", localization), "malformed localized table is not silently emitted empty")
+        StringTable(spanish.FilePath, "Adulta de prueba")
+        File.WriteAllText(Path.ChangeExtension(spanish.FilePath, ".cpoverride"), "1252")
+        Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H800UI, Path.Combine(root, "localized-encoding"), AgeEvidence.Adult, "controlled adult", localization), "unsealed encoding override cannot change reproducible localized output")
+        Check(ReferenceEquals(beforeDictionary, FilesDictionary_class.Dictionary), "failed localization restores original resource context")
+    End Sub
+
     Function Main(args As String()) As Integer
         Try
             If args.Length <> 1 OrElse Directory.Exists(args(0)) Then Throw New ArgumentException("Expected new staging root.")
@@ -292,6 +384,7 @@ Module Program
             Reject(Sub() GlobalNpcDiscovery.Scan(campaign), "winning NPC record budget blocks before inventory allocation")
             campaign.Policy.MaxRecords = 100000
             File.WriteAllText(Path.Combine(root, "campaign-profile.json"), JsonSerializer.Serialize(campaign))
+            LocalizationChecks(root)
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0

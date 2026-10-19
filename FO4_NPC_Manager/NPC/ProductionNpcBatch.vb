@@ -66,10 +66,10 @@ Namespace ExperimentalTransformation
                         Dim patch As String
                         If String.IsNullOrWhiteSpace(target.AppearancePreset) Then
                             patch = IsolatedNpcPatch.WriteRecordOnlyPatch(profile.DataRoot, profile.LoadOrder, target.SourcePlugin, target.ObjectId,
-                                attempt, target.Age, target.AdultEvidence)
+                                attempt, target.Age, target.AdultEvidence, profile.Localization)
                         Else
                             patch = IsolatedNpcPatch.WriteAppearancePatch(profile.DataRoot, profile.LoadOrder, target.SourcePlugin, target.ObjectId,
-                                attempt, target.Age, target.AdultEvidence, target.AppearancePreset, target.HumanRacePlugin, target.HumanRaceObjectId)
+                                attempt, target.Age, target.AdultEvidence, target.AppearancePreset, target.HumanRacePlugin, target.HumanRaceObjectId, profile.Localization)
                         End If
                         Dim sourceTag = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(target.SourcePlugin.ToUpperInvariant()))).Substring(0, 12)
                         Dim uniquePatch = Path.Combine(attempt, "EXPERIMENTAL-NPC-" & sourceTag & "-" & target.ObjectId.ToString("X6") & ".esp")
@@ -123,11 +123,16 @@ Namespace ExperimentalTransformation
             Throw New IOException("Batch quarantined because an original input changed.")
         End Sub
         Private Function SealProfile(profile As NpcBatchProfile) As Byte()
-            Dim identity As New StringBuilder("production-batch-v4-live-adult-race" & vbLf & JsonSerializer.Serialize(profile))
+            Dim identity As New StringBuilder("production-batch-v5-explicit-localization" & vbLf & JsonSerializer.Serialize(profile))
             For Each name In profile.LoadOrder
                 If Path.GetFileName(name) <> name OrElse String.IsNullOrWhiteSpace(name) OrElse name.Contains("/") OrElse name.Contains("\") Then Throw New ArgumentException("Plugin basenames required.")
                 SealInput(Path.Combine(profile.DataRoot, name), identity)
             Next
+            If profile.Localization IsNot Nothing Then
+                For Each table In profile.Localization.Tables
+                    SealInput(table.FilePath, identity)
+                Next
+            End If
             For Each target In profile.Targets
                 If Not String.IsNullOrWhiteSpace(target.AppearancePreset) Then SealInput(target.AppearancePreset, identity)
             Next

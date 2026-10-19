@@ -31,7 +31,9 @@ Namespace ExperimentalTransformation
                 If presetBytes > 64L * 1024 * 1024 Then Throw New IOException("Preset pool exceeds 64 MiB.")
                 paths.Add(preset)
             Next
+            If input.Localization IsNot Nothing Then paths.AddRange(input.Localization.Tables.Select(Function(t) t.FilePath))
             Dim identity = Seal(input, paths)
+            Using strings = LocalizedExportScope.Open(input.Localization, input.LoadOrder)
             Dim prior = Config_App.Current.Game
             Try
                 Config_App.Current.Game = Config_App.Game_Enum.Fallout4
@@ -74,6 +76,11 @@ Namespace ExperimentalTransformation
                     Try
                         Dim npc = RecordParsers.ParseNPC(raw, pm)
                         If npc Is Nothing OrElse Not npc.Record.ConfigurationFlagsPresente OrElse Not npc.Record.RacePresente Then Throw New InvalidDataException("Incomplete NPC.")
+                        If raw.SourcePluginIsLocalized AndAlso input.Localization IsNot Nothing Then
+                            Dim warnings As New List(Of String)
+                            SaveNpcEspWriter.CuerpoDeNpcSobrescrito(npc, Function(x) x, input.LoadOrder.Count, warnings)
+                            If warnings.Count <> 0 Then Throw New InvalidDataException("Localized NPC cannot be exported without findings: " & String.Join("; ", warnings))
+                        End If
                         item.Unique = npc.Record.ConfigurationFlagsUnique
                         item.Essential = npc.Record.ConfigurationFlagsEssential
                         item.Female = npc.Record.ConfigurationFlagsFemale
@@ -100,11 +107,13 @@ Namespace ExperimentalTransformation
                 Next
                 If Seal(input, paths) <> identity Then Throw New IOException("Input changed during discovery.")
                 Dim blockers As New List(Of String)
-                If pm.Plugins.Any(Function(p) p.IsLocalized) Then blockers.Add("localized-load-order-export-not-integrated")
+                If input.Localization Is Nothing AndAlso pm.Plugins.Any(Function(p) p.IsLocalized) Then blockers.Add("localized-load-order-export-not-integrated")
+                strings.VerifyUnchanged()
                 Return GlobalCampaign.Build(inventory, input.Policy, identity, blockers, pm.AllRecords.Count)
             Finally
                 Config_App.Current.Game = prior
             End Try
+            End Using
         End Function
         Public Sub PreparePage(input As CampaignInput, savedPlan As CampaignPlan, page As Integer, outputPath As String)
             Dim current = Scan(input)

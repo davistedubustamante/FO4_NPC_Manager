@@ -11,26 +11,26 @@ Namespace ExperimentalTransformation
         Public Function WriteAppearancePatch(dataRoot As String, loadOrder As IEnumerable(Of String),
                                              sourcePlugin As String, objectId As UInteger,
                                              outputRoot As String, age As AgeEvidence, adultEvidence As String,
-                                             presetPath As String, humanRacePlugin As String, humanRaceObjectId As UInteger) As String
+                                             presetPath As String, humanRacePlugin As String, humanRaceObjectId As UInteger, Optional localization As LocalizationProfile = Nothing) As String
             If String.IsNullOrWhiteSpace(presetPath) OrElse String.IsNullOrWhiteSpace(humanRacePlugin) OrElse humanRaceObjectId = 0UI Then
                 Throw New ArgumentException("Explicit preset and approved adult human race identity required.")
             End If
             Return WritePatch(dataRoot, loadOrder, sourcePlugin, objectId, outputRoot, age, adultEvidence,
-                              presetPath, humanRacePlugin, humanRaceObjectId)
+                              presetPath, humanRacePlugin, humanRaceObjectId, localization)
         End Function
 
         Public Function WriteRecordOnlyPatch(dataRoot As String, loadOrder As IEnumerable(Of String),
                                              sourcePlugin As String, objectId As UInteger,
                                              outputRoot As String, age As AgeEvidence,
-                                             adultEvidence As String) As String
-            Return WritePatch(dataRoot, loadOrder, sourcePlugin, objectId, outputRoot, age, adultEvidence)
+                                             adultEvidence As String, Optional localization As LocalizationProfile = Nothing) As String
+            Return WritePatch(dataRoot, loadOrder, sourcePlugin, objectId, outputRoot, age, adultEvidence, localization:=localization)
         End Function
 
         Private Function WritePatch(dataRoot As String, loadOrder As IEnumerable(Of String),
                                     sourcePlugin As String, objectId As UInteger, outputRoot As String,
                                     age As AgeEvidence, adultEvidence As String,
                                     Optional presetPath As String = "", Optional humanRacePlugin As String = "",
-                                    Optional humanRaceObjectId As UInteger = 0UI) As String
+                                    Optional humanRaceObjectId As UInteger = 0UI, Optional localization As LocalizationProfile = Nothing) As String
             If Config_App.Current.Game <> Config_App.Game_Enum.Fallout4 Then Throw New InvalidOperationException("FO4 context required.")
             If age <> AgeEvidence.Adult OrElse String.IsNullOrWhiteSpace(adultEvidence) Then Throw New ArgumentException("Explicit adult evidence required.")
             If objectId = 0UI OrElse objectId > &HFFFFFFUI Then Throw New ArgumentException("Expected a file-local object ID.")
@@ -44,6 +44,7 @@ Namespace ExperimentalTransformation
             End If
             If Directory.Exists(destination) OrElse File.Exists(destination) Then Throw New IOException("Output must be a new directory.")
             Dim names = loadOrder.ToList()
+            Using strings = LocalizedExportScope.Open(localization, names)
             If names.Count = 0 OrElse names.Distinct(StringComparer.OrdinalIgnoreCase).Count() <> names.Count Then Throw New ArgumentException("Unique explicit load order required.")
             Dim hashes As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
             Dim seen As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
@@ -53,7 +54,7 @@ Namespace ExperimentalTransformation
                 RejectReparseAncestors(inputFile)
                 Dim reader As New PluginReader()
                 reader.Load(inputFile)
-                If reader.IsLocalized Then Throw New InvalidOperationException("Localized input requires a separate strings validation stage.")
+                If reader.IsLocalized AndAlso localization Is Nothing Then Throw New InvalidOperationException("Localized input requires a separate strings validation stage.")
                 For Each master In reader.Masters
                     If Not seen.Contains(master) Then Throw New InvalidOperationException("Missing or out-of-order master: " & master)
                 Next
@@ -106,6 +107,7 @@ Namespace ExperimentalTransformation
             Dim canonicalWarnings As New List(Of String)
             Dim expectedGlobal = SaveNpcEspWriter.CuerpoDeNpcSobrescrito(npc, Function(x) x, names.Count, canonicalWarnings)
             If canonicalWarnings.Count <> 0 Then Throw New InvalidDataException("Input cannot be verified without reviewing canonical findings.")
+            strings.VerifyUnchanged()
             Directory.CreateDirectory(destination)
             Dim patch = Path.Combine(destination, If(appearance, "EXPERIMENTAL-Appearance.esp", "EXPERIMENTAL-RecordOnly.esp"))
             ' Reserve our own path; never let the existing writer overwrite a user's file.
@@ -140,7 +142,8 @@ Namespace ExperimentalTransformation
                 If HashFile(Path.Combine(inputRoot, item.Key)) <> item.Value Then Throw New IOException("Input changed during processing.")
             Next
             Dim report = New With {.schemaVersion = 1, .status = If(appearance, "EXPERIMENTAL-APPEARANCE-RECORD-NOT-FACEGEN-VALIDATED", "EXPERIMENTAL-RECORD-ONLY-NOT-IN-GAME-VALIDATED"),
-                .presetSha256 = presetHash,
+                .presetSha256 = presetHash, .localization = localization,
+                .stringDelivery = "inline-selected-language; original master string IDs retained in untouched inputs",
                 .adultEvidence = adultEvidence, .sourcePlugin = sourcePlugin, .objectId = objectId,
                 .inputSha256 = hashes, .patchSha256 = HashFile(patch), .masters = reopened.Masters,
                 .verified = New String() {"existing-reader-reopen", "identity", "global-FormID-semantic-preservation", If(appearance, "existing-preset-overlay-save-shadow", "subrecord-structure-female-bit-only"), "header-preservation", "source-unchanged"},
@@ -148,7 +151,9 @@ Namespace ExperimentalTransformation
             Using stream As New FileStream(Path.Combine(destination, "verification.json"), FileMode.CreateNew, FileAccess.Write)
                 JsonSerializer.Serialize(stream, report, New JsonSerializerOptions With {.WriteIndented = True})
             End Using
+            strings.VerifyUnchanged()
             Return patch
+            End Using
         End Function
 
         Friend Sub ValidateAppearancePreset(preset As LooksmenuLoader.LooksmenuPreset)
