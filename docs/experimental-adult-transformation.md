@@ -124,8 +124,10 @@ No se ejecutó ni modificó ninguna instalación de juego.
 - Prueba Papyrus existente de sexo del actor: 6 controles para SSE/FO4 pasan; no prueba una conversión.
 - Rama publicada: `dev/npc-transformation-experimental`, primer commit `ca3b55a`.
 - [CI experimental 39182037976](https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39182037976):
-  ambos jobs sintéticos produjeron sus artefactos (Ubuntu y Windows). La compilación Windows
-  completa seguía en curso al registrar esta observación; no se afirma todavía su resultado.
+  ambos jobs sintéticos produjeron sus artefactos (Ubuntu y Windows). Compilaron correctamente
+  DirectXTex, GUI `Publish|x64` (incluido el motor nuevo) y CLI `Release|x64`. También pasaron
+  recolección de salidas, validación de licencias/procedencia y subida de ambos artefactos Windows.
+  Esta ejecución valida el código de `ca3b55a`; los commits posteriores solo amplían documentación.
 - Intentar sobrescribir el reporte local existente devuelve código 1 y conserva su SHA-256.
 - FaceGen, ESP real, juego, quests, diálogos, voces, cuerpos y compatibilidad de colección: sin validar.
 
