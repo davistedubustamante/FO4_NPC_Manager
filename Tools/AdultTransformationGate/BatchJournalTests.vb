@@ -41,8 +41,24 @@ Public Module BatchJournalTests
         Check(File.Exists(output) AndAlso File.ReadAllText(originalFile) = "original fixture", count)
         Dim linkJournal = BatchJournal.Create(root, {original}, profile)
         Dim link = Path.Combine(linkJournal.StagingDirectory, "linked.esp")
-        File.CreateSymbolicLink(link, originalFile)
-        Reject(Sub() linkJournal.Checkpoint("linked", {"linked.esp"}), count)
+        If OperatingSystem.IsWindows() Then
+            ' Junctions need no developer-mode symbolic-link privilege on Windows CI.
+            Dim junction = Path.Combine(linkJournal.StagingDirectory, "linked")
+            Dim start As New System.Diagnostics.ProcessStartInfo("cmd.exe") With {.UseShellExecute = False, .CreateNoWindow = True}
+            start.ArgumentList.Add("/c")
+            start.ArgumentList.Add("mklink")
+            start.ArgumentList.Add("/J")
+            start.ArgumentList.Add(junction)
+            start.ArgumentList.Add(original)
+            Using process = System.Diagnostics.Process.Start(start)
+                process.WaitForExit()
+                If process.ExitCode <> 0 Then Throw New Exception("Cannot create Windows junction fixture")
+            End Using
+            Reject(Sub() linkJournal.Checkpoint("linked", {Path.Combine("linked", "input.esp")}), count)
+        Else
+            File.CreateSymbolicLink(link, originalFile)
+            Reject(Sub() linkJournal.Checkpoint("linked", {"linked.esp"}), count)
+        End If
         Return count
     End Function
     Private Sub Check(condition As Boolean, ByRef count As Integer)

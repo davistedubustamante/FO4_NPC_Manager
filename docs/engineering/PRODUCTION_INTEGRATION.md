@@ -21,10 +21,12 @@ The priority is a real editor pipeline. The offline inspector is useful preparat
 Use `EXPERIMENTAL-Conversion-CLI/NpcConversionCli.exe` from the Windows build artifact. Run it as a dedicated process, with a private profile and an existing staging parent outside every game/mod/save root:
 
 ```powershell
-.\NpcConversionCli.exe C:\Private\npc-profile.json D:\NPC-Staging
+.\NpcConversionCli.exe C:\Private\npc-profile.private.json D:\NPC-Staging
 # Resume using the directory printed by the first invocation:
-.\NpcConversionCli.exe C:\Private\npc-profile.json D:\NPC-Staging D:\NPC-Staging\npc-experimental-<id>
+.\NpcConversionCli.exe C:\Private\npc-profile.private.json D:\NPC-Staging D:\NPC-Staging\npc-experimental-<id>
 ```
+
+Save the private profile outside the repository. `*.private.json` and `npc-experimental-*` staging directories are ignored by Git.
 
 Profile shape (paths and identities are examples; do not run against an original installation without a separate authorized profile):
 
@@ -47,9 +49,9 @@ Check the actual `AgeEvidence` enum before authoring a profile; numeric 1 denote
 
 ## Result and recovery semantics
 
-1–25 explicit targets; one isolated ESP shard per NPC, not an aggregate ESP yet. Failure for one target is recorded and the next runs. Each attempt uses a fresh directory; failed output is retained, never installed and never checkpointed. Resume checks the profile, every input plugin/preset hash and prior output hashes, then skips verified checkpoints. A changed profile/input/output fails closed. Profile hashes do not prove adulthood, licensing or runtime compatibility. The original files must remain stable while a run is active.
+1–25 explicit targets; one isolated ESP shard per NPC, not an aggregate ESP yet. Failure for one target is recorded and the next runs. Each attempt uses a fresh directory; failed output is retained, never installed and never checkpointed. Resume checks the profile, every input plugin/preset hash and prior output hashes, then skips verified checkpoints. A changed profile/input/output fails closed. Profile hashes do not prove adulthood, licensing or runtime compatibility. The original files must remain stable while a run is active. Plugin/preset identity is checked again before checkpointing and between targets; changed or unreadable inputs quarantine the batch. Mesh/texture/archive resource contents are not yet hash-sealed for resume; freeze the separate profile while validating and do not treat the plugin/preset fingerprint as an asset manifest.
 
-`RequireFaceGen=false` is an explicit diagnostic mode. `RECORD-ONLY-VERIFIED` and `APPEARANCE-RECORD-VERIFIED-NO-FACEGEN` are incomplete conversions. FaceGen requires success, no skip, retained geometry, zero failed texture slots, nonempty emitted NIF/DDS and isolated paths before checkpointing. Even `FACEGEN-GENERATED-NOT-GAME-VALIDATED` is not proof of in-game appearance or collection compatibility. The original generator is integrated but cannot be exercised with real meshes/textures on the cloud machine.
+`RequireFaceGen=false` is an explicit diagnostic mode. `RECORD-ONLY-VERIFIED` and `APPEARANCE-RECORD-VERIFIED-NO-FACEGEN` are incomplete conversions. FaceGen requires success, no skip, retained geometry, zero failed texture slots, nonempty emitted NIF/DDS, every required declared output from the original packer specs, and isolated paths before checkpointing. Even `FACEGEN-GENERATED-NOT-GAME-VALIDATED` is not proof of in-game appearance or collection compatibility. The original generator is integrated but cannot be exercised with real meshes/textures on the cloud machine.
 
 `BatchJournal.Quarantine(reason)` provides logical rollback: preserve staging and mark it unusable. There is no installer and nothing to uninstall from the original game. Interrupted snapshots fail closed; recovery repair is deliberately not automatic. Hashes catch accidental changes, not an attacker able to rewrite the whole journal.
 

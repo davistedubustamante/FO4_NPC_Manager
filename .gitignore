@@ -375,3 +375,7 @@ PARCHE_BORRADORES_ESTADO.md
 **/resources.jsonl
 **/experimental-report.json
 **/local-roots.private.json
+
+# Private batch profiles and staging: never publish game metadata or generated assets
+**/*.private.json
+**/npc-experimental-*/

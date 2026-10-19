@@ -57,18 +57,10 @@ Namespace ExperimentalTransformation
             If profile.LoadOrder Is Nothing OrElse profile.LoadOrder.Count = 0 OrElse profile.LoadOrder.Distinct(StringComparer.OrdinalIgnoreCase).Count() <> profile.LoadOrder.Count Then Throw New ArgumentException("Unique explicit load order required.")
             If profile.ProtectedRoots Is Nothing OrElse profile.ProtectedRoots.Count = 0 Then Throw New ArgumentException("Explicit protected roots required.")
             Dim roots = profile.ProtectedRoots.Concat({profile.DataRoot}).ToList()
-            Dim identity As New StringBuilder(JsonSerializer.Serialize(profile))
-            For Each name In profile.LoadOrder
-                If Path.GetFileName(name) <> name OrElse String.IsNullOrWhiteSpace(name) OrElse name.Contains("/") OrElse name.Contains("\") Then Throw New ArgumentException("Plugin basenames required.")
-                SealInput(Path.Combine(profile.DataRoot, name), identity)
-            Next
             For Each target In profile.Targets
-                If Not String.IsNullOrWhiteSpace(target.AppearancePreset) Then
-                    SealInput(target.AppearancePreset, identity)
-                    roots.Add(Path.GetFullPath(target.AppearancePreset))
-                End If
+                If Not String.IsNullOrWhiteSpace(target.AppearancePreset) Then roots.Add(Path.GetFullPath(target.AppearancePreset))
             Next
-            Dim seal = Encoding.UTF8.GetBytes(identity.ToString())
+            Dim seal = SealProfile(profile)
             Dim journal = If(String.IsNullOrEmpty(resumeStage), BatchJournal.Create(stagingParent, roots, seal), BatchJournal.Recover(resumeStage, seal))
             Dim result As New NpcBatchResult With {.StagingDirectory = journal.StagingDirectory, .ProfileSha256 = journal.ProfileSha256}
             Dim priorGame = Config_App.Current.Game
@@ -100,12 +92,14 @@ Namespace ExperimentalTransformation
                         Else
                             item.Status = If(String.IsNullOrWhiteSpace(target.AppearancePreset), "RECORD-ONLY-VERIFIED", "APPEARANCE-RECORD-VERIFIED-NO-FACEGEN")
                         End If
+                        If Not seal.SequenceEqual(SealProfile(profile)) Then Throw New IOException("Inputs changed during processing.")
                         journal.Checkpoint(target.Key, outputs.Select(Function(p) Path.GetRelativePath(journal.StagingDirectory, p)))
                     Catch ex As Exception
                         item.Status = "BLOCKED-PARTIAL-NOT-INSTALLED"
                         item.Detail = ex.GetType().Name & ": " & ex.Message
                         ' No checkpoint: a resume creates a new attempt, never overwrites partial evidence.
                     End Try
+                    VerifyStableInputs(profile, seal, journal)
                 Next
                 Dim reportPath = Path.Combine(journal.StagingDirectory, "report-" & Guid.NewGuid().ToString("N") & ".json")
                 Using stream As New FileStream(reportPath, FileMode.CreateNew, FileAccess.Write)
@@ -115,6 +109,27 @@ Namespace ExperimentalTransformation
             Finally
                 Config_App.Current.Game = priorGame
             End Try
+        End Function
+        Private Sub VerifyStableInputs(profile As NpcBatchProfile, seal As Byte(), journal As BatchJournal)
+            Try
+                If seal.SequenceEqual(SealProfile(profile)) Then Return
+            Catch ex As IOException
+                journal.Quarantine("Input became unreadable during processing: " & ex.Message)
+                Throw
+            End Try
+            journal.Quarantine("Input identity changed during processing; retain all outputs for diagnosis.")
+            Throw New IOException("Batch quarantined because an original input changed.")
+        End Sub
+        Private Function SealProfile(profile As NpcBatchProfile) As Byte()
+            Dim identity As New StringBuilder(JsonSerializer.Serialize(profile))
+            For Each name In profile.LoadOrder
+                If Path.GetFileName(name) <> name OrElse String.IsNullOrWhiteSpace(name) OrElse name.Contains("/") OrElse name.Contains("\") Then Throw New ArgumentException("Plugin basenames required.")
+                SealInput(Path.Combine(profile.DataRoot, name), identity)
+            Next
+            For Each target In profile.Targets
+                If Not String.IsNullOrWhiteSpace(target.AppearancePreset) Then SealInput(target.AppearancePreset, identity)
+            Next
+            Return Encoding.UTF8.GetBytes(identity.ToString())
         End Function
         Private Sub SealInput(filePath As String, identity As StringBuilder)
             Dim current = Path.GetFullPath(filePath)
@@ -142,6 +157,8 @@ Namespace ExperimentalTransformation
                 FaceGenBuilder.BakeFaceTexturesEnabled = True
                 FaceGenBuilder.WriteGPUSandboxOutput = False
                 FilesDictionary_class.Fill_DictionaryAsync(profile.DataRoot, Nothing, loadedPlugins:=profile.LoadOrder).GetAwaiter().GetResult()
+                Dim scanErrors = FilesDictionary_class.DrainScanErrors()
+                If scanErrors.Count <> 0 Then Throw New InvalidDataException("Resource index is incomplete: " & String.Join("; ", scanErrors.Take(10)))
                 Dim pm As New PluginManager()
                 pm.LoadAllPlugins(profile.DataRoot, profile.LoadOrder)
                 pm.MergeOverridePlugin(patch)
@@ -155,7 +172,15 @@ Namespace ExperimentalTransformation
                 If baked Is Nothing OrElse Not baked.Success OrElse baked.Skipped OrElse baked.TextureSlotsFailed <> 0 OrElse baked.ShapesKept <= 0 Then
                     Throw New InvalidDataException("Incomplete FaceGen: " & If(baked Is Nothing, "no result", baked.Summary & "; " & baked.TextureFailureDetail))
                 End If
-                Dim files = baked.TexturasEscritas.Concat({baked.OutputPath}).Concat(baked.ExtraLooseFiles.Select(Function(p) Path.Combine(output, p))).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                If Not baked.DeclaracionDeSalidasPoblada Then Throw New InvalidDataException("FaceGen output declaration is missing.")
+                Dim requiredFiles As New List(Of String)
+                For Each spec In NpcFaceGenPacker.FaceGenFileSpecs(Config_App.Game_Enum.Fallout4, pm.GetOriginatingPluginName(fid), PluginManager.ToFaceGenLocalFormID(fid), False)
+                    If FaceGenPaths.SeExigeSiempre(spec.Salida) OrElse (baked.SalidasDeTexturaDeclaradas And spec.Salida) <> FaceGenPaths.SalidaDeTexturaDeCara.Ninguna Then
+                        If spec.IsTexture AndAlso (baked.SalidasDeTexturaEscritas And spec.Salida) = FaceGenPaths.SalidaDeTexturaDeCara.Ninguna Then Throw New InvalidDataException("Declared FaceGen texture was not written by this bake: " & spec.Source)
+                        requiredFiles.Add(Path.Combine(output, spec.Source))
+                    End If
+                Next
+                Dim files = requiredFiles.Concat(baked.TexturasEscritas).Concat({baked.OutputPath}).Concat(baked.ExtraLooseFiles.Select(Function(p) Path.Combine(output, p))).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
                 If Not files.Any(Function(p) Path.GetExtension(p).Equals(".dds", StringComparison.OrdinalIgnoreCase)) Then Throw New InvalidDataException("FaceGen has no emitted DDS textures.")
                 For Each filePath In files
                     Dim relative = Path.GetRelativePath(output, filePath)

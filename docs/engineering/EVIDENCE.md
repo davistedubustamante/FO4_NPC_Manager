@@ -49,3 +49,9 @@
 - Local portable gate exit 0: original 31 assertions plus 18 journal assertions, including profile/output tampering, path overlap/escape, symlinks and logical quarantine.
 - Initial Roslyn syntax check found reserved VB identifier `overrides`; corrected to `edits`. Syntax parsing is not Windows semantic compilation.
 - Windows validation pending pushed code revision; real collection assets and in-game evidence unavailable.
+
+### Production integration attempt 1 and diagnosed retry
+- c0dca14: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39258131448. Both portable matrix jobs passed; native DirectXTex, GUI and original CLI builds succeeded. Production binary gate failed with `System.InvalidOperationException: Runtime body/skin/overlay/outfit delivery is not integrated.`
+- Source diagnosis: the existing LooksMenu parser sets HasOverlays=True unconditionally to model engine clearing behavior, even when the preset has no overlays. Adapter now checks the actual unsupported overlay count rather than presence of that execution channel. No serializer/preservation guard bypassed.
+- Retry also adds declared-versus-written FaceGen checks through original packer specs, rejects resource scan errors, seals inputs again before checkpoints, preserves Windows junction coverage without requiring symbolic-link privileges, and exercises the new CLI executable against a generated binary profile.
+- Local repeated checks: exit 0, 31 baseline + 18 journal assertions. Inspector exit 0: 20 discovered, 19 passed and 1 Windows-only skipped. Records checker exit 0, 9 requirements. Windows retry pending.

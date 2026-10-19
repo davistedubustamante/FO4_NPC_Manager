@@ -22,3 +22,8 @@ summary and the collection URLs/versions (including what WoD identifies). Keep o
 archives, saves and local-roots.private.json local. Later, actual game behavior must be tested in a
 separate profile with test saves. Recurring task activation is a different action requiring explicit
 approval and an available scheduling interface; none was activated.
+
+## Integration-specific limits
+- Original FaceGen generator is now connected to staged output in code; real NIF/DDS generation still requires local licensed meshes/textures. Inspector completion is not a prerequisite for developing this adapter.
+- Initial coordinator emits one isolated ESP shard per NPC, with no automatic installation. Aggregate ESP export, inherited-category frozen resolution and asset-content fingerprints remain implementation work, not requests to upload the collection.
+- Plugin/preset hashes are sealed; assets must remain frozen during local evaluation because a full resource-content manifest is not yet attached to resume. Body/outfit/runtime overlays and voice replacement are rejected or deferred rather than silently claimed.

@@ -132,6 +132,14 @@ Module Program
             File.AppendAllText(presetPath, " ")
             Reject(Sub() ProductionNpcBatch.Run(profile, root, batch.StagingDirectory), "resume seals preset content")
             Check(sourceHash.SequenceEqual(SHA256.HashData(File.ReadAllBytes(Path.Combine(data, "Fixture.esm")))), "batch preserves original plugin")
+            profile.Targets.RemoveAt(0)
+            profile.RequireFaceGen = True
+            Dim missingResources = ProductionNpcBatch.Run(profile, root)
+            Check(missingResources.Items.Single().Status = "BLOCKED-PARTIAL-NOT-INSTALLED", "missing real FaceGen resources cannot authorize conversion")
+            Dim snapshots = Directory.GetFiles(Path.Combine(missingResources.StagingDirectory, ".batch-journal"), "*.json")
+            Check(snapshots.Length = 1, "failed FaceGen attempt never checkpointed")
+            profile.RequireFaceGen = False
+            File.WriteAllText(Path.Combine(root, "cli-profile.json"), JsonSerializer.Serialize(profile))
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-round-trip", .inGameValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0

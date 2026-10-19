@@ -84,8 +84,9 @@ Namespace ExperimentalTransformation
                 Dim preset = LooksmenuLoader.ParseFile(presetPath, pm)
                 If preset Is Nothing OrElse Not preset.HasGender OrElse preset.Gender <> 1 Then Throw New InvalidOperationException("Explicit female preset required.")
                 If preset.UnresolvedHeadParts.Count <> 0 OrElse Not String.IsNullOrEmpty(preset.UnresolvedHeadTexture) OrElse
-                   Not String.IsNullOrEmpty(preset.UnresolvedHairColor) Then Throw New InvalidOperationException("Unresolved appearance references.")
-                If preset.HasBodyMorphSliders OrElse preset.HasOverlays OrElse Not String.IsNullOrEmpty(preset.SkinTemplateId) OrElse
+                   Not String.IsNullOrEmpty(preset.UnresolvedHairColor) OrElse Not String.IsNullOrEmpty(preset.UnresolvedSkin) OrElse
+                   Not String.IsNullOrEmpty(preset.UnresolvedDefaultOutfit) OrElse Not String.IsNullOrEmpty(preset.UnresolvedSleepOutfit) Then Throw New InvalidOperationException("Unresolved appearance references.")
+                If preset.HasBodyMorphSliders OrElse preset.UnsupportedCounts.Overlays <> 0 OrElse Not String.IsNullOrEmpty(preset.SkinTemplateId) OrElse
                    preset.SkinFormIDOverride.HasValue OrElse preset.DefaultOutfitFormIDOverride.HasValue OrElse preset.SleepOutfitFormIDOverride.HasValue Then
                     Throw New InvalidOperationException("Runtime body/skin/overlay/outfit delivery is not integrated.")
                 End If

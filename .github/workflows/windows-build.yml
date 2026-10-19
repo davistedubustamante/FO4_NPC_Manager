@@ -10,6 +10,7 @@ on:
       - "FO4_FaceTint_CLI/**"
       - "Tools/AdultTransformationGate/**"
       - "Tools/PluginRoundTripGate/**"
+      - "Tools/NpcConversionCli/**"
       - "Tools/WoDInspector/**"
       - "Papyrus/**"
       - "Native/**"
@@ -21,6 +22,7 @@ on:
       - "FO4_FaceTint_CLI/**"
       - "Tools/AdultTransformationGate/**"
       - "Tools/PluginRoundTripGate/**"
+      - "Tools/NpcConversionCli/**"
       - "Tools/WoDInspector/**"
       - "Papyrus/**"
       - "Native/**"
@@ -139,7 +141,7 @@ jobs:
 
       - name: Compile FO4 NPC Manager (Publish x64)
         run: |
-          & $env:MSBUILD 'FO4_NPC_Manager/FO4_NPC_Manager/NPC_Manager_FO4.vbproj' '-t:Restore;Build' '-p:Configuration=Publish;Platform=x64' '-m:2' '-v:minimal' '-bl:npc-manager.binlog'
+          & $env:MSBUILD 'FO4_NPC_Manager/FO4_NPC_Manager/NPC_Manager_FO4.vbproj' '-t:Restore;Build' '-p:Configuration=Publish;Platform=x64' '-m:2' '-v:minimal' '-bl:npc-manager.binlog' *>&1 | Tee-Object -FilePath npc-manager-build.log
           if ($LASTEXITCODE -ne 0) { throw "NPC Manager build failed: $LASTEXITCODE" }
 
       # FaceTint CLI projects reference native C++/CLI sources that have Release|x64
@@ -163,10 +165,17 @@ jobs:
           & $env:MSBUILD 'FO4_NPC_Manager/Tools/NpcConversionCli/NpcConversionCli.vbproj' '-t:Restore;Build' '-p:Configuration=Release;Platform=x64' '-m:2' '-v:minimal' '-bl:conversion-cli.binlog' *>&1 | Tee-Object -FilePath conversion-build.log
           if ($LASTEXITCODE -ne 0) { throw "Conversion CLI build failed: $LASTEXITCODE" }
 
+      - name: Exercise conversion CLI on generated binary fixture
+        run: |
+          $cli = Get-ChildItem 'FO4_NPC_Manager/Tools/NpcConversionCli/bin' -Filter 'NpcConversionCli.exe' -Recurse | Select-Object -First 1
+          if (!$cli) { throw 'Conversion CLI executable missing' }
+          & $cli.FullName (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip/cli-profile.json') (Join-Path $env:RUNNER_TEMP 'fo4-roundtrip') *>&1 | Tee-Object -FilePath conversion-run.log
+          if ($LASTEXITCODE -ne 0) { throw "Conversion CLI fixture failed: $LASTEXITCODE" }
+
       - name: Expose fixture gate diagnosis in job summary
         if: always()
         run: |
-          foreach ($log in @('roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log')) {
+          foreach ($log in @('npc-manager-build.log', 'roundtrip-build.log', 'roundtrip-run.log', 'conversion-build.log', 'conversion-run.log')) {
             if (Test-Path $log) {
               "### $log" >> $env:GITHUB_STEP_SUMMARY
               '```text' >> $env:GITHUB_STEP_SUMMARY
@@ -252,5 +261,7 @@ jobs:
             *.binlog
             roundtrip-*.log
             conversion-build.log
+            conversion-run.log
+            npc-manager-build.log
           retention-days: 7
           if-no-files-found: ignore
