@@ -54,6 +54,9 @@ Namespace ExperimentalTransformation
             If npc.Record.ConfigurationFlagsFemale Then Throw New InvalidOperationException("Already female.")
             Dim flagsBefore = npc.Record.ConfigurationFlags
             npc.Record.ConfigurationFlagsFemale = True
+            Dim canonicalWarnings As New List(Of String)
+            Dim expectedGlobal = SaveNpcEspWriter.CuerpoDeNpcSobrescrito(npc, Function(x) x, names.Count, canonicalWarnings)
+            If canonicalWarnings.Count <> 0 Then Throw New InvalidDataException("Input cannot be verified without reviewing canonical findings.")
             Directory.CreateDirectory(destination)
             Dim patch = Path.Combine(destination, "EXPERIMENTAL-RecordOnly.esp")
             ' Reserve our own path; never let the existing writer overwrite a user's file.
@@ -71,27 +74,26 @@ Namespace ExperimentalTransformation
             If mapped <> fid OrElse written.Header.Signature <> "NPC_" Then Throw New InvalidDataException("Identity changed during round-trip.")
             If saved.Advertencias.Count <> 0 Then Throw New InvalidDataException("Writer warnings require review: " & String.Join("; ", saved.Advertencias))
             If Not raw.Subrecords.Select(Function(sr) sr.Signature).SequenceEqual(written.Subrecords.Select(Function(sr) sr.Signature)) Then Throw New InvalidDataException("Subrecord structure changed.")
-            For i = 0 To raw.Subrecords.Count - 1
-                Dim before = raw.Subrecords(i)
-                Dim after = written.Subrecords(i)
-                ' In this narrow milestone master order must remain identical, making raw preservation testable.
-                Dim original = pm.GetPluginByName(raw.SourcePluginName)
-                If Not original.Masters.SequenceEqual(reopened.Masters.Take(original.Masters.Count), StringComparer.OrdinalIgnoreCase) Then Throw New InvalidDataException("Master remapping needs a separate verification stage.")
-                If before.Signature = "ACBS" Then
-                    Dim expected = CType(before.Data.Clone(), Byte())
-                    Array.Copy(BitConverter.GetBytes(flagsBefore Or 1UI), 0, expected, 0, 4)
-                    If Not expected.SequenceEqual(after.Data) Then Throw New InvalidDataException("Unexpected ACBS change.")
-                ElseIf Not before.Data.SequenceEqual(after.Data) Then
-                    Throw New InvalidDataException("Unexpected subrecord change: " & before.Signature)
-                End If
-            Next
+            If written.Header.Flags <> (raw.Header.Flags And Not &H40000UI) OrElse
+               written.Header.Version <> raw.Header.Version OrElse written.Header.VCS1 <> raw.Header.VCS1 OrElse
+               written.Header.VCS2 <> raw.Header.VCS2 Then Throw New InvalidDataException("Unexpected record header change.")
+            ' CleanMasters can remove an unused master, changing every file-local FormID byte.
+            ' Reparse through the same manager and compare both trees emitted in GLOBAL FormID space.
+            ' No second serializer, hardcoded field whitelist or raw-byte exception list is used.
+            pm.MergeOverridePlugin(patch)
+            Dim readback = RecordParsers.ParseNPC(pm.GetRecord(fid), pm)
+            canonicalWarnings.Clear()
+            Dim actualGlobal = SaveNpcEspWriter.CuerpoDeNpcSobrescrito(readback, Function(x) x, names.Count, canonicalWarnings)
+            If canonicalWarnings.Count <> 0 OrElse Not expectedGlobal.SequenceEqual(actualGlobal) Then
+                Throw New InvalidDataException("Semantic NPC content changed after master remapping.")
+            End If
             For Each item In hashes
                 If HashFile(Path.Combine(inputRoot, item.Key)) <> item.Value Then Throw New IOException("Input changed during processing.")
             Next
             Dim report = New With {.schemaVersion = 1, .status = "EXPERIMENTAL-RECORD-ONLY-NOT-IN-GAME-VALIDATED",
                 .adultEvidence = adultEvidence, .sourcePlugin = sourcePlugin, .objectId = objectId,
                 .inputSha256 = hashes, .patchSha256 = HashFile(patch), .masters = reopened.Masters,
-                .verified = New String() {"existing-reader-reopen", "identity", "subrecord-preservation", "female-bit-only", "source-unchanged"},
+                .verified = New String() {"existing-reader-reopen", "identity", "global-FormID-semantic-preservation", "subrecord-structure", "header-preservation", "female-bit-only", "source-unchanged"},
                 .unvalidated = New String() {"adult-classifier", "FaceGen", "body", "equipment", "voices", "quests", "collection"}}
             Using stream As New FileStream(Path.Combine(destination, "verification.json"), FileMode.CreateNew, FileAccess.Write)
                 JsonSerializer.Serialize(stream, report, New JsonSerializerOptions With {.WriteIndented = True})

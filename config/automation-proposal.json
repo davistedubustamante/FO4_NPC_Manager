@@ -10,10 +10,10 @@
   "promptFile": "docs/engineering/AUTOMATION_PROMPT.md",
   "advisoryLimits": {
     "agentMinutesPerRun": 25,
-    "maxDiagnosedAttemptsPerStep": 3,
+    "maxDiagnosedAttemptsPerStep": 4,
     "maxConcurrentTasks": 1,
     "windowsCiRunsPerCodeRevision": 1,
-    "maxWindowsCiAttemptsPerRequirement": 3
+    "maxWindowsCiAttemptsPerRequirement": 4
   },
   "hardBudgetEnforcementVerified": false,
   "activationStatus": "not-activated-no-callable-scheduler-in-session",

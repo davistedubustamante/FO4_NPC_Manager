@@ -20,6 +20,6 @@ folder must not be used as a patch. All artifacts remain EXPERIMENTAL and NOT GA
 
 Production implementation is `FO4_NPC_Manager/NPC/IsolatedNpcPatch.vb`, which reuses RecordParsers,
 PluginManager and SaveNpcEspWriter. It refuses localized input, all template flags, missing/out-of-order
-masters, unknown age and an existing female actor. Complex master remapping that changes unrelated raw
-bytes is rejected rather than accepted without a semantic comparison. The next task is a typed,
-load-order-aware verification adapter; don't remove preservation assertions to pass a real mod.
+masters, unknown age and an existing female actor. Master cleanup is verified by reparsing the patch through the same PluginManager and emitting both trees
+in a common global-FormID space with the existing canonical serializer. Header and subrecord structure
+remain checked. This is fixture evidence, not a real-collection or full-script regression test.

@@ -29,3 +29,9 @@
 - Local Roslyn VB parser on both new VB files: exit 0, zero syntax errors. This is syntax evidence only, not semantic compilation or runtime evidence.
 - Fixture HEDR count corrected to include four records plus four GRUPs (8), matching the existing writer's counting contract.
 - Final bounded attempt adds public error annotations from captured diagnostic lines and includes the private-bindings/PowerShell inspector tests. No preservation check removed or downgraded. If this attempt fails, record its exact diagnostic and stop retrying the same step in this session.
+
+### Diagnosed master remapping and explicit bounded extension
+- Attempt 3: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39192996110 at 1d6c59d. GUI/CLI/native builds succeeded; public annotation finally exposed `System.IO.InvalidDataException: Master remapping needs a separate verification stage.` The identity check before that guard passed.
+- The strict original master-prefix check was an explicitly unsupported feature boundary, not evidence that the existing writer corrupted identity. Implemented common-global-FormID readback using PluginManager.MergeOverridePlugin, RecordParsers.ParseNPC and SaveNpcEspWriter.CuerpoDeNpcSobrescrito. Header and signature structure checks retained; added explicit identity checks for NPC, race and voice across removed unused masters.
+- Reasoned retry policy amendment: initial run + three retries = four total executions, with this final targeted verification after obtaining an actual diagnostic. No fifth full build in this session. No user approval needed for this routine bounded technical decision; no recurring automation activated.
+- Latest inspector Windows matrix at 1d6c59d passed 20 tests including PowerShell; Linux passed 19 and skipped the one Windows-only test. Engineering records CI passed at https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39192996109.

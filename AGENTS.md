@@ -5,7 +5,7 @@ Work from `dev/npc-transformation-experimental`; preserve existing work. Read `d
 ## Iteration contract
 1. Select the highest-priority feasible pending requirement; investigate existing library/editor functions first. Record selection and acceptance checks in the plan.
 2. Implement real behavior, with tests that exercise the actual implementation and meaningful negative cases. Never implement a second production ESP serializer to bypass the existing reader/writer.
-3. Run local tests and the existing pinned Windows GitHub Actions pipeline. Preserve pins, TLS/checksum verification, licenses and original build configurations. Maximum three diagnosis-driven attempts per failing step; record failures and switch to independent work if blocked.
+3. Run local tests and the existing pinned Windows GitHub Actions pipeline. Preserve pins, TLS/checksum verification, licenses and original build configurations. Maximum four total executions (initial plus three diagnosis-driven retries) per failing step; record failures and switch to independent work if blocked.
 4. Track command, exit status, test counts, CI URL and exact tested commit. Synthetic, binary round-trip, generated FaceGen and in-game evidence are distinct levels. Do not claim game compatibility from compilation.
 5. Commit verified code on the experimental branch; push for CI. Document any unverified work and remaining blocker precisely. Continue with another viable requirement within the session.
 
