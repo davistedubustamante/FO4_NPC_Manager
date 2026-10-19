@@ -153,7 +153,7 @@
     {
       "id": "R10",
       "requirement": "Consolidate verified batch into one isolated ESP and generated resource bundle",
-      "status": "in_progress",
+      "status": "verified",
       "dependsOn": [
         "R09"
       ],
@@ -162,7 +162,8 @@
         "https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39259948641",
         "No real FaceGen, playable collection, body/voice/quest or in-game certification implied",
         "ESP milestone verified; generated-resource copy/conflict branches are compiled but not exercised by record-only fixtures. Resource bundle acceptance remains pending.",
-        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 \u2014 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only."
+        "74289ec: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39261465287 \u2014 40 mandatory production assertions, positive ESL appearance export, oversized NPC/race ID exclusion, two-NPC CLI execution; full Windows workflow passed. Fixture scope only.",
+        "d1e483f: controlled checkpointed .bin copy, deduplication, conflict rejection, no partial bundle checkpoint and copied-file tamper detection passed. This certifies file-copy semantics, not positive FaceGen."
       ],
       "acceptance": [
         "Reuse original multientry ESP writer, never a second serializer",
@@ -192,12 +193,13 @@
     {
       "id": "R12",
       "requirement": "Global winning NPC discovery, conservative classification and deterministic campaign pages",
-      "status": "in_progress",
+      "status": "verified",
       "dependsOn": [
         "R09"
       ],
       "evidence": [
-        "Local planner: 20 assertions on 10000 rows; Windows real-reader discovery validation pending"
+        "Local planner: 20 assertions on 10000 rows; Windows real-reader discovery validation pending",
+        "d1e483f: full Windows CI passed: https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39271103795; 69 mandatory production assertions plus actual discovery/page CLI execution. Generated binary fixtures only; portable planner handles 10000 rows, no game conversion certification."
       ],
       "acceptance": [
         "Original loader resolves winning overrides and ESL identities; lineage and masters reported",

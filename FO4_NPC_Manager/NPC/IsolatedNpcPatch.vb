@@ -89,17 +89,7 @@ Namespace ExperimentalTransformation
                 RejectReparseAncestors(presetPath)
                 presetHash = HashFile(presetPath)
                 Dim preset = LooksmenuLoader.ParseFile(presetPath, pm)
-                If preset Is Nothing OrElse Not preset.HasGender OrElse preset.Gender <> 1 Then Throw New InvalidOperationException("Explicit female preset required.")
-                If preset.UnresolvedHeadParts.Count <> 0 OrElse Not String.IsNullOrEmpty(preset.UnresolvedHeadTexture) OrElse
-                   Not String.IsNullOrEmpty(preset.UnresolvedHairColor) OrElse Not String.IsNullOrEmpty(preset.UnresolvedSkin) OrElse
-                   Not String.IsNullOrEmpty(preset.UnresolvedDefaultOutfit) OrElse Not String.IsNullOrEmpty(preset.UnresolvedSleepOutfit) Then Throw New InvalidOperationException("Unresolved appearance references.")
-                If preset.HasBodyMorphSliders OrElse preset.UnsupportedCounts.Overlays <> 0 OrElse Not String.IsNullOrEmpty(preset.SkinTemplateId) OrElse
-                   preset.SkinFormIDOverride.HasValue OrElse preset.DefaultOutfitFormIDOverride.HasValue OrElse preset.SleepOutfitFormIDOverride.HasValue Then
-                    Throw New InvalidOperationException("Runtime body/skin/overlay/outfit delivery is not integrated.")
-                End If
-                If preset.ChargenFaceMorphs.Count = 0 AndAlso preset.HeadPartFormIDs.Count = 0 AndAlso preset.FaceTintLayers.Count = 0 Then
-                    Throw New InvalidOperationException("Preset must carry an explicit face change.")
-                End If
+                ValidateAppearancePreset(preset)
                 Dim options As New PresetCategories.PresetCategoryOptions With {
                     .FaceParts = True, .HairColor = True, .FaceTints = True, .FaceVertexMorphs = True, .FaceBoneRegions = True}
                 Dim selected = PresetCategoryFilter.BuildFiltered(preset, npc, Nothing, options, False)
@@ -160,6 +150,20 @@ Namespace ExperimentalTransformation
             End Using
             Return patch
         End Function
+
+        Friend Sub ValidateAppearancePreset(preset As LooksmenuLoader.LooksmenuPreset)
+            If preset Is Nothing OrElse Not preset.HasGender OrElse preset.Gender <> 1 Then Throw New InvalidOperationException("Explicit female preset required.")
+            If preset.UnresolvedHeadParts.Count <> 0 OrElse Not String.IsNullOrEmpty(preset.UnresolvedHeadTexture) OrElse
+               Not String.IsNullOrEmpty(preset.UnresolvedHairColor) OrElse Not String.IsNullOrEmpty(preset.UnresolvedSkin) OrElse
+               Not String.IsNullOrEmpty(preset.UnresolvedDefaultOutfit) OrElse Not String.IsNullOrEmpty(preset.UnresolvedSleepOutfit) Then Throw New InvalidOperationException("Unresolved appearance references.")
+            If preset.HasBodyMorphSliders OrElse preset.UnsupportedCounts.Overlays <> 0 OrElse Not String.IsNullOrEmpty(preset.SkinTemplateId) OrElse
+               preset.SkinFormIDOverride.HasValue OrElse preset.DefaultOutfitFormIDOverride.HasValue OrElse preset.SleepOutfitFormIDOverride.HasValue Then
+                Throw New InvalidOperationException("Runtime body/skin/overlay/outfit delivery is not integrated.")
+            End If
+            If preset.ChargenFaceMorphs.Count = 0 AndAlso preset.HeadPartFormIDs.Count = 0 AndAlso preset.FaceTintLayers.Count = 0 Then
+                Throw New InvalidOperationException("Preset must carry an explicit face change.")
+            End If
+        End Sub
 
         Private Function HashFile(filePath As String) As String
             Using stream = File.OpenRead(filePath)

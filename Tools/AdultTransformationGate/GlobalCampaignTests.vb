@@ -42,7 +42,11 @@ Module GlobalCampaignTests
         Dim batch = GlobalCampaign.CreateBatch(New CampaignInput With {.DataRoot = "data", .LoadOrder = New List(Of String) From {"Base.esm"}, .ProtectedRoots = New List(Of String) From {"data"}}, plan, 0)
         Check(batch.Targets.Count = 10 AndAlso batch.RequireFaceGen AndAlso batch.Targets.All(Function(t) t.Age = AgeEvidence.Adult), checks)
         policy.MaxRecords = 100
+        Reject(Sub() GlobalCampaign.Build(Array.Empty(Of DiscoveredNpc)(), policy, "hash"), checks)
+        Dim savedEvidence = policy.AdultEvidence
+        policy.AdultEvidence = New Dictionary(Of String, String)
         Reject(Sub() GlobalCampaign.Build(all, policy, "hash"), checks)
+        policy.AdultEvidence = savedEvidence
         policy.MaxRecords = 100000 : policy.BatchSize = 26
         Reject(Sub() GlobalCampaign.Build(all, policy, "hash"), checks)
         policy.BatchSize = 10 : policy.RobotRaces.Add("base.esm|000801")
@@ -56,6 +60,8 @@ Module GlobalCampaignTests
         Reject(Sub() GlobalCampaign.CreateBatch(New CampaignInput, localized, 0), checks)
         policy.FemalePresets.Clear()
         Check(GlobalCampaign.Build(all, policy, "hash").Pages.Count = 0, checks)
+        policy.FemalePresets = Enumerable.Range(0, 257).Select(Function(i) i.ToString() & ".json").ToList()
+        Reject(Sub() GlobalCampaign.Build(Array.Empty(Of DiscoveredNpc)(), policy, "hash"), checks)
         Return checks
     End Function
     Private Sub Check(ok As Boolean, ByRef checks As Integer)

@@ -57,18 +57,19 @@ Namespace ExperimentalTransformation
         Public Property AdultEvidence As String = ""
     End Class
     Public Class CampaignPlan
-        Public Property Version As String = "global-plan-v3-live-adult-race"
+        Public Property Version As String = "global-plan-v4-filtered-discovery"
         Public Property Status As String = "EXPERIMENTAL-PLAN-NOT-CONVERTED"
         Public Property InputSha256 As String = ""
         Public Property PlanSha256 As String = ""
         Public Property BatchSize As Integer
+        Public Property LoadedRecordCount As Integer
         Public Property ExecutionBlockers As New List(Of String)
         Public Property Decisions As New List(Of CampaignDecision)
         Public Property Pages As New List(Of List(Of String))
         Public Property Coverage As New SortedDictionary(Of String, Integer)(StringComparer.Ordinal)
     End Class
     Public Module GlobalCampaign
-        Public Function Build(inventory As IEnumerable(Of DiscoveredNpc), policy As CampaignPolicy, inputSha256 As String, Optional executionBlockers As IEnumerable(Of String) = Nothing) As CampaignPlan
+        Public Function Build(inventory As IEnumerable(Of DiscoveredNpc), policy As CampaignPolicy, inputSha256 As String, Optional executionBlockers As IEnumerable(Of String) = Nothing, Optional loadedRecordCount As Integer = 0) As CampaignPlan
             If policy Is Nothing OrElse policy.BatchSize < 1 OrElse policy.BatchSize > 25 OrElse policy.MaxRecords < 1 OrElse policy.MaxRecords > 100000 OrElse policy.MaxReportBytes < 1 OrElse policy.MaxReportBytes > 64L * 1024 * 1024 OrElse policy.MaxPluginBytes < 1 OrElse policy.MaxPluginBytes > 8L * 1024 * 1024 * 1024 OrElse policy.FemalePresets Is Nothing OrElse policy.FemalePresets.Count > 256 OrElse policy.AdultEvidence Is Nothing OrElse policy.AdultEvidence.Count > policy.MaxRecords Then Throw New ArgumentException("Invalid campaign resource limits.")
             Dim records = inventory.Take(policy.MaxRecords + 1).ToList()
             If records.Count > policy.MaxRecords OrElse records.Any(Function(n) n Is Nothing OrElse String.IsNullOrWhiteSpace(n.Key)) OrElse records.Select(Function(n) n.Key.ToUpperInvariant()).Distinct().Count() <> records.Count Then Throw New InvalidDataException("Inventory limit, null entry or duplicate identity.")
@@ -81,7 +82,7 @@ Namespace ExperimentalTransformation
                 If Not adults.TryAdd(pair.Key, pair.Value) Then Throw New ArgumentException("Duplicate adult evidence identity.")
             Next
             Dim presets = policy.FemalePresets.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(Function(p) p, StringComparer.Ordinal).ToArray()
-            Dim plan As New CampaignPlan With {.InputSha256 = inputSha256, .BatchSize = policy.BatchSize, .ExecutionBlockers = If(executionBlockers, Array.Empty(Of String)()).Distinct().OrderBy(Function(x) x, StringComparer.Ordinal).ToList()}
+            Dim plan As New CampaignPlan With {.InputSha256 = inputSha256, .BatchSize = policy.BatchSize, .LoadedRecordCount = loadedRecordCount, .ExecutionBlockers = If(executionBlockers, Array.Empty(Of String)()).Distinct().OrderBy(Function(x) x, StringComparer.Ordinal).ToList()}
             For Each npc In records.OrderBy(Function(n) n.Key, StringComparer.OrdinalIgnoreCase)
                 Dim d As New CampaignDecision With {.Npc = npc}
                 plan.Decisions.Add(d)

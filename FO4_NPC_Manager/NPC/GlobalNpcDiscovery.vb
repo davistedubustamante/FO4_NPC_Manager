@@ -37,7 +37,8 @@ Namespace ExperimentalTransformation
                 Config_App.Current.Game = Config_App.Game_Enum.Fallout4
                 Dim pm As New PluginManager()
                 ' Existing loader and FileID allocator determine every winning override, including ESL.
-                pm.LoadAllPlugins(input.DataRoot, input.LoadOrder)
+                pm.LoadAllPlugins(input.DataRoot, input.LoadOrder, sigFilter:=New HashSet(Of String)(StringComparer.Ordinal) From {
+                    "NPC_", "RACE", "FACT", "HDPT", "TXST", "CLFM", "CLAS", "VTYP", "ARMO", "ARMA", "OTFT", "LVLN", "LVLI", "KYWD"})
                 If input.LoadOrder.Any(Function(n) Not pm.IsLoaded(n)) Then Throw New InvalidDataException("Incomplete load order.")
                 Dim mastersSeen As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
                 For Each name In input.LoadOrder
@@ -47,7 +48,7 @@ Namespace ExperimentalTransformation
                 Next
                 For Each presetPath In input.Policy.FemalePresets
                     Dim preset = LooksmenuLoader.ParseFile(presetPath, pm)
-                    If preset Is Nothing OrElse Not preset.HasGender OrElse preset.Gender <> 1 Then Throw New InvalidDataException("Female preset pool contains an invalid or nonfemale preset.")
+                    IsolatedNpcPatch.ValidateAppearancePreset(preset)
                 Next
                 Dim winners = pm.GetNPCs()
                 If winners.Count > input.Policy.MaxRecords Then Throw New IOException("NPC inventory budget exceeded.")
@@ -100,7 +101,7 @@ Namespace ExperimentalTransformation
                 If Seal(input, paths) <> identity Then Throw New IOException("Input changed during discovery.")
                 Dim blockers As New List(Of String)
                 If pm.Plugins.Any(Function(p) p.IsLocalized) Then blockers.Add("localized-load-order-export-not-integrated")
-                Return GlobalCampaign.Build(inventory, input.Policy, identity, blockers)
+                Return GlobalCampaign.Build(inventory, input.Policy, identity, blockers, pm.AllRecords.Count)
             Finally
                 Config_App.Current.Game = prior
             End Try
