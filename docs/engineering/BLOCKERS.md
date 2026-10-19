@@ -71,3 +71,8 @@ route. Do not request collection uploads or install anything to bypass these adm
 Independent recovery tightening: a resumed controlled trial must present the original immutable
 quota. A changed requested ceiling is rejected without appending to the ledger; portable134
 assertions pass, Windows mismatch test pending. See NATIVE_WRITE_AUDIT.md and storage-writers.json.
+
+Final171196a /39344366956 Success:193 Windows checks and134 portable assertions. CLI binding
+and immutable-resume-ceiling cases are resolved. The controlled record trial is verified; complete
+R13 remains in_progress because full FaceGen/cache/native/package coverage, physical allocation
+bounds and genuine resource/runtime proof are not certified. No global/full-generation admission.

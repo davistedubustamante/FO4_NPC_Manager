@@ -73,3 +73,24 @@ to the immutable ledger header. Previously Recover retained the original ceiling
 CLI specified another value. Add read-only BudgetBytes, reject mismatch before controlled scope,
 and test ledger unchanged plus valid resume. Portable134 assertions pass, build exit0/no warnings.
 Queue its changed-code Windows validation only after the active run finishes; never overlap runs.
+
+75b587b full Windows39343903446 Success:191 mandatory checks,132 portable. Original serializer,
+aggregate/checkpoints/resources and actual CLI controlled create/resume verified in fixture scope.
+171196a immutable-ceiling follow-up:134 portable passed; Windows39344366956 now active, queued
+after prior completion. No additional feature changes planned before this result. Next integration
+checkpoint remains disabled-cache/shared-scope genuine FaceGen validation and remaining original
+native/transaction/package interfaces; full quota flag and global worker stay false.
+
+## Verified resume checkpoint171196a
+
+Windows39344366956 full Success:193 mandatory checks,134 portable assertions. Preserve ancestors
+includinge56a6db,71d329a,57043d6,e71248f,c1c771f. Original ESP sink, controlled record export/reopen,
+checkpoint/aggregate/copy/report quota, actual CLI resume and immutable-ceiling checks verified.
+No active or pending code validation. Documentation-only checkpoint does not require a rebuild.
+
+Next code step: complete the original FaceGen call-tree audit, disable/restore index persistence
+and all auxiliary paths in one shared-budget scope, adapt/reject remaining path/native/package
+interfaces, then validate genuine NIF/DDS/material output with exhaustion/interruption. Keep
+RequireFaceGen=true and global mass execution rejected until admitted routes are actually proven.
+Actual preset/body/equipment compatibility and in-game regression need the isolated authorized
+Windows profile; follow LOCAL_AUTHENTIC_TRIAL.md, keep resources local and originals untouched.

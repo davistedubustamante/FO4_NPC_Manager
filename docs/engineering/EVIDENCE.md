@@ -243,3 +243,26 @@ portable creation/recovery assertions pass:134 total,17 controlled-writer assert
 exit0,zero warnings/errors. Windows adds mismatch rejection and byte-identical ledger checks.
 All previous named commits remain ancestors; tools1.2GiB+repository24MiB, no new dependencies.
 Windows validation must wait until active75b587b run completes; no overlapping build dispatched.
+
+75b587b / https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39343903446 :
+full Windows Success;191 mandatory checks,132 portable assertions at this commit. Original GUI,
+native FaceTint, conversion CLI, actual controlled-record CLI create/resume, localization sealing,
+reviewed discovery, sequential preparation, launcher, licenses/provenance and bounded experimental
+artifacts all passed. Five new cleanup/diagnostic guards passed. Retry fixed CLI BC30616 without
+weakening tests or dependencies. Engineering records39343903416 Success.
+
+171196a adds only immutable resume-quota validation plus fixtures; local134 portable assertions
+pass, Windows https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39344366956
+in progress. This third changed-code run started only after75b587b's run finished. One further
+diagnosis-driven execution remains within the four-run cap if needed. No repeated unchanged build.
+
+Final verified checkpoint171196a:
+https://github.com/davistedubustamante/FO4_NPC_Manager/actions/runs/39344366956
+full Windows Success,193 mandatory binary/controlled-asset checks and134 portable assertions.
+GUI/native FaceTint/conversion CLI, actual controlled-record create/resume, localization,
+discovery/preparation/launcher, licenses/source-overlay provenance and bounded experimental
+artifacts all passed. Immutable resume-ceiling mismatch rejects without ledger mutation.
+Three changed-code Windows executions this iteration; first failed diagnosed CLI binding,
+second and third fully passed. No unnecessary unchanged rebuild, no fourth execution needed.
+No authentic FaceGen/body/equipment/game evidence, no mass worker, no original game/save edit,
+installation, activation, merge, release or recurring automation. Source pins unchanged.
