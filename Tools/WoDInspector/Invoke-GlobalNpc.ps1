@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)][ValidateSet('Discover','AnalyzeNarrative','StartPreparation','NextPreparation','PausePreparation','ResumePreparation')][string]$Task,
+    [Parameter(Mandatory=$true)][ValidateSet('SealLocalization','Discover','DiscoverReviewed','AnalyzeNarrative','StartPreparation','NextPreparation','PausePreparation','ResumePreparation')][string]$Task,
     [Parameter(Mandatory=$true)][string]$CliPath,
     [Parameter(Mandatory=$true)][ValidatePattern('^[A-Fa-f0-9]{64}$')][string]$CliSha256,
     [Parameter(Mandatory=$true)][string]$ProfilePath,
@@ -29,7 +29,9 @@ if ($profile.Localization) {
 }
 $invokeArgs = @()
 switch ($Task) {
+    'SealLocalization' { if (!$OutputPath) { throw 'OutputPath required' }; $invokeArgs = @('--seal-localization',$ProfilePath,$OutputPath) }
     'Discover' { if (!$OutputPath) { throw 'OutputPath required' }; $invokeArgs = @('--discover',$ProfilePath,$OutputPath) }
+    'DiscoverReviewed' { if (!$OutputPath) { throw 'OutputPath required' }; $invokeArgs = @('--discover-reviewed',$ProfilePath,$OutputPath) }
     'AnalyzeNarrative' { if (!$OutputPath) { throw 'OutputPath required' }; $invokeArgs = @('--analyze-narrative',$ProfilePath,$OutputPath) }
     'StartPreparation' { if (!$PlanPath -or !$StagingDirectory) { throw 'PlanPath and new StagingDirectory required' }; $invokeArgs = @('--start-preparation',$ProfilePath,$PlanPath,$StagingDirectory,$BudgetBytes.ToString([Globalization.CultureInfo]::InvariantCulture)) }
     'NextPreparation' { if (!$PlanPath -or !$StagingDirectory) { throw 'PlanPath and StagingDirectory required' }; $invokeArgs = @('--next-preparation',$ProfilePath,$PlanPath,$StagingDirectory) }

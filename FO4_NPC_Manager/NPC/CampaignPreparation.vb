@@ -67,7 +67,7 @@ Namespace ExperimentalTransformation
             Next
         End Sub
         Private Function CurrentPlan(input As CampaignInput, saved As CampaignPlan) As CampaignPlan
-            Dim current = GlobalNpcDiscovery.Scan(input)
+            Dim current = If(saved IsNot Nothing AndAlso saved.NarrativeAnalyzed, NarrativeDependencies.DiscoverReviewed(input), GlobalNpcDiscovery.Scan(input))
             If saved Is Nothing OrElse current.InputSha256 <> saved.InputSha256 OrElse current.PlanSha256 <> saved.PlanSha256 Then Throw New InvalidDataException("Campaign plan is stale; no page writes allowed.")
             If current.ExecutionBlockers.Count <> 0 Then Throw New InvalidOperationException("Campaign has unresolved execution admission blockers.")
             Return current

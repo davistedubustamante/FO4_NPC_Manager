@@ -58,6 +58,20 @@ Module GlobalCampaignTests
         Check(GlobalCampaign.Build(all, policy, "hash").Decisions(13).Category = "companion", checks)
         Dim localized = GlobalCampaign.Build(all, policy, "hash", {"localized-load-order-export-not-integrated"})
         Reject(Sub() GlobalCampaign.CreateBatch(New CampaignInput, localized, 0), checks)
+        Dim triage As New DiscoveredNpc With {.Key = "BASE.ESM|000ABC", .Origin = "Base.esm", .ObjectId = &HABCUI, .RaceKey = "BASE.ESM|000801", .RaceOrigin = "Base.esm", .RaceObjectId = &H801UI, .RaceFlagsKnown = True}
+        policy.AdultEvidence(triage.Key) = "reviewed adult"
+        triage.NarrativeState = "review-required"
+        Dim reviewed = GlobalCampaign.Build({triage}, policy, "narrative-snapshot")
+        Check(reviewed.NarrativeAnalyzed AndAlso reviewed.Pages.Count = 0 AndAlso reviewed.Decisions.Single().Route = "individual-regression-review", checks)
+        triage.NarrativeState = "blocked"
+        Check(GlobalCampaign.Build({triage}, policy, "narrative-snapshot").Decisions.Single().Reason = "narrative-analysis-incomplete", checks)
+        triage.NarrativeState = "static-candidate-not-runtime-validated"
+        Check(GlobalCampaign.Build({triage}, policy, "narrative-snapshot").Pages.Count = 1, checks)
+        triage.NarrativeState = "runtime-compatible"
+        Check(GlobalCampaign.Build({triage}, policy, "narrative-snapshot").Pages.Count = 0, checks)
+        triage.NarrativeState = "static-candidate-not-runtime-validated"
+        policy.AdultEvidence.Remove(triage.Key)
+        Check(GlobalCampaign.Build({triage}, policy, "narrative-snapshot").Decisions.Single().Reason = "adulthood-unknown", checks)
         policy.FemalePresets.Clear()
         Check(GlobalCampaign.Build(all, policy, "hash").Pages.Count = 0, checks)
         policy.FemalePresets = Enumerable.Range(0, 257).Select(Function(i) i.ToString() & ".json").ToList()

@@ -20,6 +20,21 @@ Module Program
                 End If
                 Return 0
             End If
+            If args.Length = 3 AndAlso args(0) = "--preflight-real" Then
+                If New FileInfo(args(1)).Length > 16L * 1024 * 1024 Then Throw New IOException("Trial profile exceeds 16 MiB.")
+                Dim trial = JsonSerializer.Deserialize(Of AuthenticTrialInput)(File.ReadAllBytes(args(1)), New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True})
+                Dim report = LocalAuthenticTrial.Inspect(trial)
+                LocalAuthenticTrial.WriteReport(trial, report, args(2))
+                Console.WriteLine("Read-only authentic resource preflight; no ESP or FaceGen generated or installed.")
+                Return 0
+            End If
+            If args.Length = 3 AndAlso args(0) = "--seal-localization" Then
+                Dim campaign = ReadCampaign(args(1))
+                campaign.Localization = LocalizedExportScope.SealSelection(campaign.Localization, campaign.LoadOrder)
+                GlobalNpcDiscovery.WritePrivateProfile(campaign, args(2))
+                Console.WriteLine("Sealed explicit local resource selection; no resource copied or installed.")
+                Return 0
+            End If
             If args.Length = 3 AndAlso args(0) = "--analyze-narrative" Then
                 Dim campaign = ReadCampaign(args(1))
                 Dim report = NarrativeDependencies.Analyze(campaign)
@@ -35,9 +50,9 @@ Module Program
                 Console.WriteLine("Prepared verified input page; no patch generated or installed.")
                 Return 0
             End If
-            If args.Length = 3 AndAlso args(0) = "--discover" Then
+            If args.Length = 3 AndAlso (args(0) = "--discover" OrElse args(0) = "--discover-reviewed") Then
                 Dim campaign = ReadCampaign(args(1))
-                Dim plan = GlobalNpcDiscovery.Scan(campaign)
+                Dim plan = If(args(0) = "--discover-reviewed", NarrativeDependencies.DiscoverReviewed(campaign), GlobalNpcDiscovery.Scan(campaign))
                 GlobalNpcDiscovery.WriteReport(campaign, plan, args(2))
                 Console.WriteLine($"{plan.Decisions.Count} winning NPC records; {plan.Pages.Count} planned pages; NOT converted. {plan.PlanSha256}")
                 Return 0

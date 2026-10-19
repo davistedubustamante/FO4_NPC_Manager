@@ -121,9 +121,12 @@ Namespace ExperimentalTransformation
             End Try
         End Function
         Public Sub PreparePage(input As CampaignInput, savedPlan As CampaignPlan, page As Integer, outputPath As String)
-            Dim current = Scan(input)
+            Dim current = If(savedPlan IsNot Nothing AndAlso savedPlan.NarrativeAnalyzed, NarrativeDependencies.DiscoverReviewed(input), Scan(input))
             If savedPlan Is Nothing OrElse current.PlanSha256 <> savedPlan.PlanSha256 OrElse current.InputSha256 <> savedPlan.InputSha256 Then Throw New InvalidDataException("Discovery plan is stale or policy changed.")
             WriteBounded(input, GlobalCampaign.CreateBatch(input, current, page), outputPath)
+        End Sub
+        Public Sub WritePrivateProfile(input As CampaignInput, outputPath As String)
+            WriteBounded(input, input, outputPath)
         End Sub
         Public Sub WriteReport(input As CampaignInput, plan As CampaignPlan, outputPath As String)
             WriteBounded(input, plan, outputPath)

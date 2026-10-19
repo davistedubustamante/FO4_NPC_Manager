@@ -170,6 +170,14 @@ jobs:
           & $env:MSBUILD 'FO4_NPC_Manager/Tools/NpcConversionCli/NpcConversionCli.vbproj' '-t:Restore;Build' '-p:Configuration=Release;Platform=x64' '-m:2' '-v:minimal' '-bl:conversion-cli.binlog' *>&1 | Tee-Object -FilePath conversion-build.log
           if ($LASTEXITCODE -ne 0) { throw "Conversion CLI build failed: $LASTEXITCODE" }
 
+      - name: Seal local BA2 selection and classify narrative through actual CLI
+        run: |
+          $cli = Get-ChildItem 'FO4_NPC_Manager/Tools/NpcConversionCli/bin' -Filter 'NpcConversionCli.exe' -Recurse | Select-Object -First 1
+          & $cli.FullName --seal-localization "$env:RUNNER_TEMP/fo4-roundtrip/ba2-selection-profile.json" "$env:RUNNER_TEMP/fo4-roundtrip/cli-sealed-ba2-profile.json"
+          if ($LASTEXITCODE -ne 0) { throw "BA2 selection CLI failed: $LASTEXITCODE" }
+          & $cli.FullName --discover-reviewed "$env:RUNNER_TEMP/fo4-roundtrip/campaign-profile.json" "$env:RUNNER_TEMP/fo4-roundtrip/cli-reviewed-plan.json"
+          if ($LASTEXITCODE -ne 0) { throw "Narrative classification CLI failed: $LASTEXITCODE" }
+
       - name: Exercise conversion CLI on generated binary fixture
         run: |
           $cli = Get-ChildItem 'FO4_NPC_Manager/Tools/NpcConversionCli/bin' -Filter 'NpcConversionCli.exe' -Recurse | Select-Object -First 1

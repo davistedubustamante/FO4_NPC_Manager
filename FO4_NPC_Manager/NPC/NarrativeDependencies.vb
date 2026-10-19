@@ -37,12 +37,13 @@ Namespace ExperimentalTransformation
             Dim prior = Config_App.Current.Game
             Try
                 Config_App.Current.Game = Config_App.Game_Enum.Fallout4
+                Dim report As NarrativeReport
                 Using resources = LocalizedExportScope.Open(input.Localization, input.LoadOrder)
                     Dim pm As New PluginManager()
                     pm.LoadAllPlugins(input.DataRoot, input.LoadOrder, sigFilter:=signatures)
                     If input.LoadOrder.Any(Function(n) Not pm.IsLoaded(n)) Then Throw New InvalidDataException("Incomplete narrative load order.")
                     If pm.AllRecords.Count > input.Policy.MaxRecords * 10L Then Throw New IOException("Narrative record budget exceeded.")
-                    Dim report As New NarrativeReport With {.InputSha256 = plan.InputSha256}
+                    report = New NarrativeReport With {.InputSha256 = plan.InputSha256}
                     For Each raw In pm.AllRecords.Values.OrderBy(Function(r) r.Header.FormID)
                         If raw.Header.IsDeleted OrElse Not signatures.Contains(raw.Header.Signature) Then Continue For
                         Dim source = Identity(pm, raw.Header.FormID)
@@ -110,12 +111,30 @@ Namespace ExperimentalTransformation
                         report.Npcs.Add(impact)
                     Next
                     resources.VerifyUnchanged()
-                    If GlobalNpcDiscovery.Scan(input).InputSha256 <> plan.InputSha256 Then Throw New IOException("Narrative input changed during analysis.")
-                    Return report
                 End Using
+                If GlobalNpcDiscovery.Scan(input).InputSha256 <> plan.InputSha256 Then Throw New IOException("Narrative input changed during analysis.")
+                Return report
             Finally
                 Config_App.Current.Game = prior
             End Try
+        End Function
+        ' Explicit reviewed discovery route. Reuses inventory/classifier; no second global planner.
+        Public Function DiscoverReviewed(input As CampaignInput) As CampaignPlan
+            Dim plan = GlobalNpcDiscovery.Scan(input)
+            Dim report = Analyze(input)
+            If report.InputSha256 <> plan.InputSha256 Then Throw New IOException("Narrative analysis belongs to another input snapshot.")
+            Dim impacts = report.Npcs.ToDictionary(Function(n) n.Key, StringComparer.OrdinalIgnoreCase)
+            For Each decision In plan.Decisions
+                Dim impact As NpcNarrativeImpact = Nothing
+                If report.Findings.Count <> 0 OrElse Not impacts.TryGetValue(decision.Npc.Key, impact) Then
+                    decision.Npc.NarrativeState = "blocked"
+                    decision.Npc.NarrativeEvidence = report.Findings.Take(64).ToList()
+                Else
+                    decision.Npc.NarrativeState = If(impact.ReviewRequired, "review-required", "static-candidate-not-runtime-validated")
+                    decision.Npc.NarrativeEvidence = impact.Upstream.Take(64).Concat({"effective voice: " & impact.Voice, "runtime quest/audio compatibility unvalidated"}).ToList()
+                End If
+            Next
+            Return GlobalCampaign.Build(plan.Decisions.Select(Function(d) d.Npc), input.Policy, plan.InputSha256, plan.ExecutionBlockers, plan.LoadedRecordCount)
         End Function
         Private Function Identity(pm As PluginManager, fid As UInteger) As String
             Dim owner = pm.GetOriginatingPluginName(fid)

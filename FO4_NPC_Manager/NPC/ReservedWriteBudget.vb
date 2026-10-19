@@ -123,24 +123,8 @@ Namespace ExperimentalTransformation
             End SyncLock
         End Sub
         Public Sub WriteNew(relativePath As String, bytes As Byte())
-            SyncLock writeGate
-            EnsureHealthy()
-            If Paused Then Throw New InvalidOperationException("Workspace is paused.")
-            ValidateName(relativePath)
             If bytes Is Nothing OrElse bytes.LongLength > 32L * 1024 * 1024 Then Throw New IOException("Controlled output exceeds 32 MiB.")
-            If reservations.Count >= 2000 OrElse reservations.Any(Function(e) e.RelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase)) Then Throw New IOException("Reservation already exists or count budget exceeded.")
-            Dim destination = Path.Combine(root, relativePath)
-            CheckPath(destination)
-            If File.Exists(destination) OrElse IO.Directory.Exists(destination) Then Throw New IOException("Controlled output must be new.")
-            Dim entry As New Entry With {.Kind = "reserve", .RelativePath = relativePath, .Length = bytes.LongLength, .Sha256 = Digest(bytes)}
-            ' Persist AND flush the full reservation before creating any payload file. Never refund a failed write.
-            Append(entry, bytes.LongLength)
-            reservations.Add(entry) : reserved += bytes.LongLength
-            IO.Directory.CreateDirectory(Path.GetDirectoryName(destination))
-            Using stream As New FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None)
-                stream.Write(bytes) : stream.Flush(True)
-            End Using
-            End SyncLock
+            WriteStream(relativePath, bytes.LongLength, Digest(bytes), Sub(output) output.Write(bytes))
         End Sub
         ' Capability interface for serializers that accept Stream. Never expose a writable path/handle.
         ' Direct-path/native writers are NOT admitted by this interface.
@@ -175,7 +159,7 @@ Namespace ExperimentalTransformation
             entry.Previous = previous
             Dim json = JsonSerializer.Serialize(entry)
             Dim bytes = Encoding.UTF8.GetBytes(Digest(Encoding.UTF8.GetBytes(json)) & ":" & json & ChrW(10))
-            If bytes.LongLength + payload > RemainingBytes Then Throw New IOException("Hard controlled-write budget exhausted before writing; reservation and payload unchanged.")
+            If ledger.Length + bytes.LongLength > 1024 * 1024 OrElse bytes.LongLength + payload > RemainingBytes Then Throw New IOException("Hard controlled-write budget exhausted before writing; reservation and payload unchanged.")
             Try
                 ledger.Write(bytes) : ledger.Flush(True)
                 previous = Digest(bytes)

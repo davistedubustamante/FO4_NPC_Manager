@@ -78,7 +78,7 @@ Namespace ExperimentalTransformation
                         Else
                             If Not Path.GetExtension(filePath).Equals(".ba2", StringComparison.OrdinalIgnoreCase) OrElse Not table.ResourcePath.Replace("/", "\").Equals(aliasKey, StringComparison.OrdinalIgnoreCase) Then Throw New ArgumentException("BA2 table must name the exact selected Strings resource.")
                             ' Inspect only metadata before allowing the original resource reader to extract this entry.
-                            Using reader As New BethesdaReader(New FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            Using archiveSource As New FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read), reader As New BethesdaReader(archiveSource)
                                 If Not reader.Ba2HeaderVersion.HasValue OrElse reader.EntriesFiles.Count > 1000000 Then Throw New InvalidDataException("BA2 index limit or format rejected.")
                                 Dim entries = reader.EntriesFiles.Where(Function(e) e.FullPath.Replace("/", "\").Equals(aliasKey, StringComparison.OrdinalIgnoreCase)).ToList()
                                 If entries.Count <> 1 Then Throw New InvalidDataException("Missing or ambiguous BA2 language resource.")
@@ -86,6 +86,7 @@ Namespace ExperimentalTransformation
                                 Dim payload = reader.GetPayloadSource(entry.Index)
                                 If payload.HasDx10Metadata OrElse payload.DecompSize < 8 OrElse payload.DecompSize > 32L * 1024 * 1024 OrElse payload.Length > 32L * 1024 * 1024 Then Throw New IOException("BA2 string entry exceeds bounded GNRL extraction limits.")
                                 total += payload.DecompSize
+                                If total > 128L * 1024 * 1024 Then Throw New IOException("Language tables exceed 128 MiB.")
                             End Using
                             If scope.archiveNames.Add(Path.GetFileName(filePath)) Then
                                 Dim sourceOrder As Integer
@@ -118,6 +119,47 @@ Namespace ExperimentalTransformation
                 scope.Dispose()
                 Throw
             End Try
+        End Function
+        ' Local Windows preparation: seal explicit existing winners, without copying any resource.
+        Public Shared Function SealSelection(selection As LocalizationProfile, plugins As IEnumerable(Of String)) As LocalizationProfile
+            If selection Is Nothing OrElse selection.Tables Is Nothing OrElse selection.Tables.Count < 1 OrElse selection.Tables.Count > 4096 OrElse Not System.Text.RegularExpressions.Regex.IsMatch(selection.Language, "\A[a-z]{2,24}\z") Then Throw New ArgumentException("Explicit bounded language selection required.")
+            Dim result = System.Text.Json.JsonSerializer.Deserialize(Of LocalizationProfile)(System.Text.Json.JsonSerializer.Serialize(selection))
+            Dim names = plugins.ToArray()
+            Dim digests As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+            Dim selectedBytes As Long = 0
+            For Each table In result.Tables
+                If table Is Nothing OrElse Not names.Contains(table.Plugin, StringComparer.OrdinalIgnoreCase) OrElse Path.GetFileName(table.Plugin) <> table.Plugin OrElse Not {"strings", "dlstrings", "ilstrings"}.Contains(table.Kind) Then Throw New ArgumentException("Table owner/kind must match explicit profile.")
+                table.FilePath = Path.GetFullPath(table.FilePath)
+                CheckPath(table.FilePath)
+                Dim filename = Path.GetFileNameWithoutExtension(table.Plugin) & "_" & result.Language & "." & table.Kind
+                If String.IsNullOrEmpty(table.ResourcePath) Then
+                    If Not Path.GetFileName(table.FilePath).Equals(filename, StringComparison.OrdinalIgnoreCase) OrElse New FileInfo(table.FilePath).Length > 32L * 1024 * 1024 Then Throw New IOException("Loose selected-language table exceeds name/size constraints.")
+                    selectedBytes += New FileInfo(table.FilePath).Length
+                Else
+                    Dim key = "Strings\" & filename
+                    If Not Path.GetExtension(table.FilePath).Equals(".ba2", StringComparison.OrdinalIgnoreCase) OrElse Not table.ResourcePath.Replace("/", "\").Equals(key, StringComparison.OrdinalIgnoreCase) Then Throw New ArgumentException("Exact BA2 selected-language resource required.")
+                    Using archiveSource As New FileStream(table.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read), archive As New BethesdaReader(archiveSource)
+                        Dim entries = archive.EntriesFiles.Where(Function(e) e.FullPath.Replace("/", "\").Equals(key, StringComparison.OrdinalIgnoreCase)).ToArray()
+                        If Not archive.Ba2HeaderVersion.HasValue OrElse archive.EntriesFiles.Count > 1000000 OrElse entries.Length <> 1 Then Throw New InvalidDataException("Missing or ambiguous BA2 table.")
+                        Dim payload = archive.GetPayloadSource(entries(0).Index)
+                        If payload.HasDx10Metadata OrElse payload.DecompSize < 8 OrElse payload.DecompSize > 32L * 1024 * 1024 OrElse payload.Length > 32L * 1024 * 1024 Then Throw New IOException("BA2 table exceeds extraction limits.")
+                        selectedBytes += payload.DecompSize
+                        If selectedBytes > 128L * 1024 * 1024 Then Throw New IOException("Selected language pool exceeds 128 MiB.")
+                        table.ResourceSha256 = Convert.ToHexString(SHA256.HashData(archive.ExtractToMemory(entries(0).Index)))
+                    End Using
+                End If
+                If selectedBytes > 128L * 1024 * 1024 Then Throw New IOException("Selected language pool exceeds 128 MiB.")
+                If Not digests.ContainsKey(table.FilePath) Then
+                    Using source As New FileStream(table.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                        digests.Add(table.FilePath, Convert.ToHexString(SHA256.HashData(source)))
+                    End Using
+                End If
+                table.Sha256 = digests(table.FilePath)
+            Next
+            Using scope = Open(result, names)
+                scope.VerifyUnchanged()
+            End Using
+            Return result
         End Function
         Public Shared Function Audit(npc As NPC_Data) As List(Of LocalizedStringAudit)
             Dim result As New List(Of LocalizedStringAudit)

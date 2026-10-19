@@ -50,6 +50,8 @@ Namespace ExperimentalTransformation
         Public Property Factions As New List(Of String)
         Public Property HasScripts As Boolean
         Public Property ErrorDetail As String = ""
+        Public Property NarrativeState As String = "not-analyzed"
+        Public Property NarrativeEvidence As New List(Of String)
     End Class
     Public Class CampaignDecision
         Public Property Npc As DiscoveredNpc
@@ -60,11 +62,12 @@ Namespace ExperimentalTransformation
         Public Property AdultEvidence As String = ""
     End Class
     Public Class CampaignPlan
-        Public Property Version As String = "global-plan-v7-reviewed-canonical-input"
+        Public Property Version As String = "global-plan-v8-effective-buckets-narrative"
         Public Property Status As String = "EXPERIMENTAL-PLAN-NOT-CONVERTED"
         Public Property InputSha256 As String = ""
         Public Property PlanSha256 As String = ""
         Public Property BatchSize As Integer
+        Public Property NarrativeAnalyzed As Boolean
         Public Property LoadedRecordCount As Integer
         Public Property ExecutionBlockers As New List(Of String)
         Public Property Decisions As New List(Of CampaignDecision)
@@ -112,8 +115,14 @@ Namespace ExperimentalTransformation
                         d.Reason = "inherited-categories-unresolved"
                     ElseIf npc.Female Then
                         d.Reason = "already-female-not-integrally-validated"
+                    ElseIf npc.NarrativeState = "blocked" Then
+                        d.Reason = "narrative-analysis-incomplete"
                     ElseIf d.Category <> "generic-human" Then
                         d.Route = "individual-regression-review" : d.Reason = "quests-scenes-relationships-voices"
+                    ElseIf npc.NarrativeState = "review-required" Then
+                        d.Route = "individual-regression-review" : d.Reason = "static-narrative-dependencies-require-review"
+                    ElseIf npc.NarrativeState <> "not-analyzed" AndAlso npc.NarrativeState <> "static-candidate-not-runtime-validated" Then
+                        d.Reason = "unrecognized-narrative-admission"
                     ElseIf presets.Length = 0 Then
                         d.Reason = "female-preset-pool-required"
                     Else
@@ -131,6 +140,7 @@ Namespace ExperimentalTransformation
             For offset = 0 To eligible.Length - 1 Step policy.BatchSize
                 plan.Pages.Add(eligible.Skip(offset).Take(policy.BatchSize).ToList())
             Next
+            plan.NarrativeAnalyzed = records.Count > 0 AndAlso records.All(Function(n) n.NarrativeState <> "not-analyzed")
             plan.PlanSha256 = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(plan)))
             Return plan
         End Function

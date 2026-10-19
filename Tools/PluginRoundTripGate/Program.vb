@@ -130,6 +130,16 @@ Module Program
         For Each table In manifest.Tables
             table.Sha256 = archiveHash
         Next
+        Dim sealedSelection = LocalizedExportScope.SealSelection(manifest, {"Fallout4.esm", "Fixture.esm"})
+        Check(sealedSelection.Tables.All(Function(t) t.Sha256 = archiveHash AndAlso t.ResourceSha256.Length = 64), "local sealer fingerprints individual BA2 tables without copying archive")
+        Dim sealArchive = Path.Combine(root, "selection-only.ba2")
+        File.WriteAllBytes(sealArchive, Ba2WriterGNRL.Build(entries, New Ba2WriterGNRL.Options With {.Version = 1UI}))
+        Dim unsealed = JsonSerializer.Deserialize(Of LocalizationProfile)(JsonSerializer.Serialize(manifest))
+        For Each table In unsealed.Tables
+            table.FilePath = sealArchive : table.Sha256 = "" : table.ResourceSha256 = ""
+        Next
+        Dim sealCampaign As New CampaignInput With {.DataRoot = data, .LoadOrder = New List(Of String) From {"Fallout4.esm", "Fixture.esm"}, .ProtectedRoots = New List(Of String) From {data}, .Localization = unsealed}
+        File.WriteAllText(Path.Combine(root, "ba2-selection-profile.json"), JsonSerializer.Serialize(sealCampaign))
         Dim oldDictionary = FilesDictionary_class.Dictionary
         Dim oldCache = FilesDictionary_class.CacheDirectory
         Using scope = LocalizedExportScope.Open(manifest, {"Fallout4.esm", "Fixture.esm"})
@@ -341,6 +351,7 @@ Module Program
         campaign.Policy.AdultEvidence.Add("FIXTURE.ESM|000804", "controlled adult")
         Dim plan = GlobalNpcDiscovery.Scan(campaign)
         Check(plan.Decisions.Single(Function(d) d.Npc.ObjectId = &H804UI).Npc.TraitsMaterialized, "global classification uses materialized effective Traits without mutating source")
+        AdditionalInheritanceChecks(root, data, inputBytes, script)
         RewriteFixture(data,
             Function(record)
                 Dim parts = RecordBytes(record).ToList()
@@ -363,6 +374,54 @@ Module Program
         RewriteFixture(data, Function(record) If(record.Header.FormID = &H1000804UI, RecordBytes(record).Concat(Sr("TPLT", BitConverter.GetBytes(&H1000800UI))).ToArray(), RecordBytes(record)))
         Reject(Sub() WriteRecordOnlyPatch(data, order, "Fixture.esm", &H804UI, Path.Combine(root, "traits-ambiguous"), AgeEvidence.Adult, "controlled adult"), "duplicate template pointer is rejected as ambiguous", "Ambiguous duplicate")
         Check(Not Directory.Exists(Path.Combine(root, "traits-cycle")) AndAlso Not Directory.Exists(Path.Combine(root, "traits-incomplete")), "invalid template chains write no output directories")
+    End Sub
+
+    Private Sub AdditionalInheritanceChecks(root As String, data As String, originalBytes As Byte(), script As Byte())
+        Dim input = Path.Combine(data, "Fixture.esm")
+        Dim mask As UShort = 0US
+        For Each category In {NPC_TemplateCategory.Traits, NPC_TemplateCategory.Factions, NPC_TemplateCategory.Inventory, NPC_TemplateCategory.AIData}
+            mask = mask Or CUShort(1 << CInt(category))
+        Next
+        RewriteFixture(data,
+            Function(record)
+                If record.Header.Signature <> "NPC_" Then Return RecordBytes(record)
+                Dim parts As New List(Of Byte)
+                For Each part In record.Subrecords
+                    Dim bytes = part.Data.ToArray()
+                    If record.Header.FormID = &H1000804UI AndAlso part.Signature = "ACBS" Then Array.Copy(BitConverter.GetBytes(mask), 0, bytes, 14, 2)
+                    If record.Header.FormID = &H1000800UI AndAlso part.Signature = "AIDT" Then bytes(0) = 1
+                    If record.Header.FormID = &H1000800UI AndAlso part.Signature = "VTCK" Then parts.AddRange(Sr("SNAM", BitConverter.GetBytes(&H1000805UI).Concat(New Byte() {2}).ToArray()))
+                    parts.AddRange(Sr(part.Signature, bytes))
+                    If record.Header.FormID = &H1000800UI AndAlso part.Signature = "RNAM" Then
+                        parts.AddRange(Sr("COCT", BitConverter.GetBytes(1UI)))
+                        parts.AddRange(Sr("CNTO", BitConverter.GetBytes(&H1000806UI).Concat(BitConverter.GetBytes(3UI)).ToArray()))
+                    End If
+                Next
+                Return parts.ToArray()
+            End Function)
+        Dim inputSnapshot = File.ReadAllBytes(input)
+        Dim patch = WriteRecordOnlyPatch(data, {"Fallout4.esm", "Fixture.esm"}, "Fixture.esm", &H804UI, Path.Combine(root, "inherited-buckets"), AgeEvidence.Adult, "controlled adult")
+        Dim reader As New PluginReader() : reader.Load(patch)
+        Dim written = reader.Records.Values.Single()
+        Check(BitConverter.ToUInt16(written.GetSubrecord("ACBS").Value.Data, 14) = 0US, "combined verified inherited buckets become owned before transformation")
+        Check(written.GetSubrecord("SNAM").Value.Data(4) = 2, "effective inherited faction rank replaces target own rank")
+        Check(BitConverter.ToUInt32(written.GetSubrecord("CNTO").Value.Data, 4) = 3UI, "effective inherited inventory count preserved through original ESP writer")
+        Check(written.GetSubrecord("AIDT").Value.Data(0) = 1, "original AIData materializer preserves effective behavior")
+        Check(written.GetSubrecord("VMAD").Value.Data.SequenceEqual(script) AndAlso written.GetSubrecord("PKID").HasValue, "additional materialization preserves target scripts and noninherited packages")
+        Check(File.ReadAllBytes(input).SequenceEqual(inputSnapshot), "additional category export leaves original plugin untouched")
+        RewriteFixture(data, Function(record) If(record.Header.FormID = &H1000804UI, record.Subrecords.SelectMany(Function(part) Sr(part.Signature, If(part.Signature = "TPLT", BitConverter.GetBytes(&H1000FFFUI), part.Data))).ToArray(), RecordBytes(record)))
+        Reject(Sub() WriteRecordOnlyPatch(data, {"Fallout4.esm", "Fixture.esm"}, "Fixture.esm", &H804UI, Path.Combine(root, "inherited-dead"), AgeEvidence.Adult, "controlled adult"), "combined inheritance rejects incomplete category source")
+        File.WriteAllBytes(input, inputSnapshot)
+        RewriteFixture(data, Function(record)
+                                 If record.Header.FormID <> &H1000804UI Then Return RecordBytes(record)
+                                 Return record.Subrecords.SelectMany(Function(part)
+                                                                          Dim bytes = part.Data.ToArray()
+                                                                          If part.Signature = "ACBS" Then Array.Copy(BitConverter.GetBytes(CUShort(&HFFFFUS)), 0, bytes, 14, 2)
+                                                                          Return Sr(part.Signature, bytes)
+                                                                      End Function).ToArray()
+                             End Function)
+        Reject(Sub() WriteRecordOnlyPatch(data, {"Fallout4.esm", "Fixture.esm"}, "Fixture.esm", &H804UI, Path.Combine(root, "inherited-unsupported"), AgeEvidence.Adult, "controlled adult"), "unverified inherited categories remain blocked", "Unverified inherited category")
+        File.WriteAllBytes(input, originalBytes)
     End Sub
 
     Private Sub NarrativeChecks(root As String)
@@ -393,12 +452,27 @@ Module Program
         Check(report.Edges.Any(Function(e) e.Signature = "RELA" AndAlso e.Target = "FIXTURE.ESM|000800"), "original canonical walker discovers relationship actor references")
         Check(report.Npcs.Single().Upstream.Contains("NARRATIVE.ESP|000801") AndAlso report.Npcs.Single().ReviewRequired, "reverse transitive analysis requires review for quest-linked generic NPC")
         Check(report.Npcs.Single().Voice = "FIXTURE.ESM|000802" AndAlso report.Status.Contains("NOT-QUEST-COMPATIBILITY"), "static impact records effective voice without asserting quest compatibility")
+        Dim reviewed = NarrativeDependencies.DiscoverReviewed(campaign)
+        Check(reviewed.NarrativeAnalyzed AndAlso reviewed.Decisions.Single().Npc.NarrativeState <> "not-analyzed", "narrative findings participate in global classification seal")
+        Check(reviewed.Decisions.Single().Route <> "adult-human-production-pipeline" AndAlso reviewed.Pages.Count = 0, "quest-linked or incomplete narrative analysis cannot enter generic batch pages")
         Reject(Sub() NarrativeDependencies.Analyze(campaign, 1), "narrative edge budget fails closed")
         Dim reportPath = Path.Combine(root, "narrative-report.json")
         GlobalNpcDiscovery.WriteNarrativeReport(campaign, report, reportPath)
         Reject(Sub() GlobalNpcDiscovery.WriteNarrativeReport(campaign, report, reportPath), "narrative report cannot overwrite prior evidence")
     End Sub
 
+    Private Sub AssetValidationChecks()
+        Dim dds = DirectXTextureConversionHelper.Bgra32BytesToDdsBytes(4, 4, New Byte(63) {}, 28)
+        Dim valid = LocalAuthenticTrial.ValidateAsset(dds, ".dds")
+        Check(valid.Width = 4 AndAlso valid.Height = 4 AndAlso valid.Sha256.Length = 64, "native DDS encoder and decoder validate bounded controlled texture (not authentic FaceGen)")
+        Reject(Sub() LocalAuthenticTrial.ValidateAsset(dds.Take(128).ToArray(), ".dds"), "truncated DDS rejected before resource admission")
+        Dim excessive = dds.ToArray()
+        Array.Copy(BitConverter.GetBytes(65536UI), 0, excessive, 16, 4)
+        Reject(Sub() LocalAuthenticTrial.ValidateAsset(excessive, ".dds"), "DDS allocation bounds enforced before native decoder")
+        Reject(Sub() LocalAuthenticTrial.ValidateAsset(New Byte() {1, 2, 3}, ".nif"), "original NIF reader rejects invalid resource")
+        Reject(Sub() LocalAuthenticTrial.ValidateAsset(dds, ".nif"), "DDS cannot masquerade as FaceGen NIF")
+        Reject(Sub() LocalAuthenticTrial.Inspect(New AuthenticTrialInput()), "incomplete authentic trial never produces conversion evidence")
+    End Sub
     Private Sub UnmodeledRecordChecks(root As String)
         Dim data = Directory.CreateDirectory(Path.Combine(root, "unmodeled-inputs")).FullName
         Fixture(data, genericHuman:=True)
@@ -624,6 +698,7 @@ Module Program
             TraitsChecks(root)
             NarrativeChecks(root)
             UnmodeledRecordChecks(root)
+            AssetValidationChecks()
             File.WriteAllText(Path.Combine(root, "gate.json"), JsonSerializer.Serialize(New With {.checksPassed = checks, .evidence = "binary-fixture-production-integration", .inGameValidated = False, .realFaceGenValidated = False}))
             Console.WriteLine($"{checks} checks passed; binary fixture only, NOT an in-game conversion.")
             Return 0
