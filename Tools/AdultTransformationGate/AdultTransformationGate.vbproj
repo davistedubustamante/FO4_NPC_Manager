@@ -16,6 +16,7 @@
     <Compile Include="GlobalCampaignTests.vb" />
     <Compile Include="../../FO4_NPC_Manager/NPC/ReservedWriteBudget.vb" Link="ReservedWriteBudget.vb" />
     <Compile Include="ReservedWriteBudgetTests.vb" />
+    <Compile Include="../../FO4_NPC_Manager/NPC/BoundedOutputStream.vb" Link="BoundedOutputStream.vb" />
     <Compile Include="Program.vb" />
   </ItemGroup>
 </Project>

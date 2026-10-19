@@ -11,6 +11,9 @@ Namespace ExperimentalTransformation
         Public Property Kind As String = "strings"
         Public Property FilePath As String = ""
         Public Property Sha256 As String = ""
+        ' FilePath/Sha256 seal the loose file OR archive. Empty ResourcePath selects loose mode.
+        Public Property ResourcePath As String = ""
+        Public Property ResourceSha256 As String = ""
     End Class
     Public Class NpcBatchProfile
         Public Property DataRoot As String = ""

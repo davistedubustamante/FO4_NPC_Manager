@@ -1,6 +1,7 @@
 Imports System.IO
 Imports System.Linq
 Imports System.Text
+Imports System.Security.Cryptography
 Imports FO4_NPC_Manager.ExperimentalTransformation
 Module ReservedWriteBudgetTests
     Function Run() As Integer
@@ -50,6 +51,36 @@ Module ReservedWriteBudgetTests
             check(workspace.VerifiedNames.Length = 2, "new attempt retains partial attempt")
             Dim fileBytes = Directory.EnumerateFiles(stage, "*", SearchOption.AllDirectories).Sum(Function(p) New FileInfo(p).Length)
             check(fileBytes <= 8192 AndAlso workspace.RemainingBytes >= 0, "ledger plus controlled files under byte ceiling")
+        End Using
+        Dim streamed = Path.Combine(root, "streams")
+        Dim payload = New Byte() {1, 2, 3, 4}
+        Dim hash = Convert.ToHexString(SHA256.HashData(payload))
+        Using workspace = ReservedWriteBudget.Create(streamed, 16384, {original})
+            workspace.WriteStream("Data/one.esp", 4, hash, Sub(output) output.Write(payload))
+            check(workspace.VerifiedNames.Contains("Data/one.esp"), "streamed output checkpoint follows hash and flush")
+            reject(Sub() workspace.WriteStream("Data/overrun.dds", 4, hash, Sub(output) output.Write(New Byte(4) {})), "stream overrun prevented before first payload byte")
+            check(New FileInfo(Path.Combine(streamed, "Data/overrun.dds")).Length = 0, "oversized stream writes zero bytes")
+            reject(Sub() workspace.WriteStream("temp/extend.nif", 4, hash, Sub(output) output.SetLength(5)), "SetLength cannot bypass quota")
+            reject(Sub() workspace.WriteStream("cache/seek.bin", 4, hash, Sub(output) output.Seek(Long.MaxValue, SeekOrigin.Begin)), "seek cannot bypass quota or overflow")
+            reject(Sub() workspace.WriteStream("staging/partial.nif", 4, hash, Sub(output)
+                                                                               output.WriteByte(1)
+                                                                               Throw New IOException("interrupted")
+                                                                           End Sub), "interrupted stream propagates failure")
+            reject(Sub() workspace.WriteStream("packages/full-but-interrupted.bin", 4, hash, Sub(output)
+                                                                                               output.Write(payload)
+                                                                                               Throw New IOException("interrupted after payload")
+                                                                                           End Sub), "exception after complete bytes is not success")
+            check(workspace.VerifiedNames.Length = 1, "failed streams never checkpoint even with matching full bytes")
+            reject(Sub() workspace.WriteStream("resources/wrong-hash.bin", 4, New String("0"c, 64), Sub(output) output.Write(payload)), "wrong streamed hash cannot checkpoint")
+            Dim remaining = workspace.RemainingBytes
+            reject(Sub() workspace.WriteStream("temp/exhausted.bin", 16384, hash, Sub(output) output.Write(payload)), "aggregate quota rejects streaming reservation before creating file")
+            check(workspace.RemainingBytes = remaining AndAlso Not File.Exists(Path.Combine(streamed, "temp/exhausted.bin")), "failed reservation consumes no payload or ledger")
+        End Using
+        Using workspace = ReservedWriteBudget.Recover(streamed)
+            check(workspace.VerifiedNames.SequenceEqual({"Data/one.esp"}) AndAlso workspace.ReservedNames.Length = 7, "stream completions and charged partial attempts recover independently")
+            workspace.WriteStream("staging/retry.nif", 4, hash, Sub(output) output.Write(payload))
+            check(workspace.VerifiedNames.Length = 2, "recovery retries in a fresh reserved stream")
+            check(Directory.EnumerateFiles(streamed, "*", SearchOption.AllDirectories).Sum(Function(p) New FileInfo(p).Length) <= 16384, "all controlled stream categories and ledger fit ceiling")
         End Using
         check(File.ReadAllText(Path.Combine(original, "game.txt")) = "unchanged", "original unchanged")
         File.AppendAllText(Path.Combine(stage, "budget-ledger.jsonl"), "interrupted reservation")

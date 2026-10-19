@@ -40,3 +40,9 @@ Use an already isolated authorized Windows resource view and the local bridge. M
 ## Storage
 
 Reuse pinned SDK/dependency caches. Cloud working-set ceiling 2 GiB; observed tools1.2 GiB + repository23 MiB + temporary SDK Roslyn syntax helper26 MiB. No new packages or collection resources installed/downloaded. New Windows payload <=256 MiB plus portable evidence <=1 MiB per matrix job, retention two days; existing user artifacts are not deleted. Loose language pool <=128 MiB, bounded metadata outputs only. Keep original files/saves read-only.
+
+## Current BA2 / strict-storage iteration
+
+Preserve 71d329a and 57043d6. R15 first: original pinned BethesdaReader metadata, bounded individual GNRL entry, original FilesDictionary registration/generation and localized resolver, explicit winner/source/resource SHA and ESP reopen. No complete archive extraction or resource cache writes. New fixtures exercise all three table types, missing IDs, conflicting selections, language/hash errors and restored resource state. Windows validation pending; maximum four changed-code attempts for this new step.
+
+R13 next: inspect/adapt stream interfaces; never claim the metadata gateway constrains direct path/native writes. Global mass executor remains disabled. Independent R11/R14 and authentic local resource admission follow as feasible.

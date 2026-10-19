@@ -19,11 +19,13 @@ Namespace ExperimentalTransformation
         End Class
         Private ReadOnly ledger As FileStream
         Private ReadOnly reservations As New List(Of Entry)
+        Private ReadOnly completedStreams As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         Private ReadOnly root As String
         Private ceiling As Long
         Private reserved As Long
         Private previous As String = ""
         Private faulted As Boolean
+        Private ReadOnly writeGate As New Object
         Public ReadOnly Property DirectoryPath As String
             Get
                 Return root
@@ -84,10 +86,12 @@ Namespace ExperimentalTransformation
                     If entry.Kind = "header" Then
                         If workspace.ceiling <> 0 OrElse entry.Length < 4096 OrElse entry.Length > 1024L * 1024 * 1024 Then Throw New InvalidDataException("Invalid budget header.")
                         workspace.ceiling = entry.Length
-                    ElseIf entry.Kind = "reserve" Then
+                    ElseIf entry.Kind = "reserve" OrElse entry.Kind = "stream-reserve" Then
                         workspace.ValidateName(entry.RelativePath)
                         If entry.Length < 0 OrElse entry.Length > 32L * 1024 * 1024 OrElse entry.Sha256.Length <> 64 OrElse workspace.reservations.Any(Function(e) e.RelativePath.Equals(entry.RelativePath, StringComparison.OrdinalIgnoreCase)) Then Throw New InvalidDataException("Invalid or duplicate reservation.")
                         workspace.reservations.Add(entry) : workspace.reserved += entry.Length
+                    ElseIf entry.Kind = "stream-complete" Then
+                        If Not workspace.reservations.Any(Function(e) e.Kind = "stream-reserve" AndAlso e.RelativePath = entry.RelativePath AndAlso e.Sha256 = entry.Sha256) OrElse Not workspace.completedStreams.Add(entry.RelativePath) Then Throw New InvalidDataException("Invalid stream completion.")
                     ElseIf entry.Kind = "pause" Then
                         workspace.pausedState = True
                     ElseIf entry.Kind = "resume" Then
@@ -111,12 +115,15 @@ Namespace ExperimentalTransformation
             ledger = New FileStream(Path.Combine(root, "budget-ledger.jsonl"), mode, FileAccess.ReadWrite, FileShare.None)
         End Sub
         Public Sub SetPaused(value As Boolean)
+            SyncLock writeGate
             EnsureHealthy()
             If value = Paused Then Return
             Append(New Entry With {.Kind = If(value, "pause", "resume")})
             pausedState = value
+            End SyncLock
         End Sub
         Public Sub WriteNew(relativePath As String, bytes As Byte())
+            SyncLock writeGate
             EnsureHealthy()
             If Paused Then Throw New InvalidOperationException("Workspace is paused.")
             ValidateName(relativePath)
@@ -133,6 +140,35 @@ Namespace ExperimentalTransformation
             Using stream As New FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None)
                 stream.Write(bytes) : stream.Flush(True)
             End Using
+            End SyncLock
+        End Sub
+        ' Capability interface for serializers that accept Stream. Never expose a writable path/handle.
+        ' Direct-path/native writers are NOT admitted by this interface.
+        Public Sub WriteStream(relativePath As String, length As Long, sha256 As String, writer As Action(Of Stream))
+            SyncLock writeGate
+            EnsureHealthy()
+            If Paused Then Throw New InvalidOperationException("Workspace is paused.")
+            ValidateName(relativePath)
+            If writer Is Nothing OrElse length < 0 OrElse length > 32L * 1024 * 1024 OrElse sha256 Is Nothing OrElse Not System.Text.RegularExpressions.Regex.IsMatch(sha256, "\A[0-9A-Fa-f]{64}\z") Then Throw New ArgumentException("Bounded stream length, hash and writer required.")
+            If reservations.Count >= 2000 OrElse reservations.Any(Function(e) e.RelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase)) Then Throw New IOException("Reservation already exists or count budget exceeded.")
+            Dim destination = Path.Combine(root, relativePath)
+            CheckPath(destination)
+            If File.Exists(destination) OrElse IO.Directory.Exists(destination) Then Throw New IOException("Controlled output must be new.")
+            Dim entry As New Entry With {.Kind = "stream-reserve", .RelativePath = relativePath, .Length = length, .Sha256 = sha256.ToUpperInvariant()}
+            Append(entry, length)
+            reservations.Add(entry) : reserved += length
+            IO.Directory.CreateDirectory(Path.GetDirectoryName(destination))
+            Using output As New FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None)
+                Using bounded As New BoundedOutputStream(output, length)
+                    writer(bounded)
+                End Using
+                output.Flush(True)
+            End Using
+            ' A matching payload without a durable completion is deliberately NOT a checkpoint.
+            If Not VerifyPayload(entry) Then Throw New InvalidDataException("Incomplete or incorrect streamed output; charge retained.")
+            Append(New Entry With {.Kind = "stream-complete", .RelativePath = relativePath, .Sha256 = entry.Sha256})
+            completedStreams.Add(relativePath)
+            End SyncLock
         End Sub
         Private Sub Append(entry As Entry, Optional payload As Long = 0)
             EnsureHealthy()
@@ -148,6 +184,10 @@ Namespace ExperimentalTransformation
             End Try
         End Sub
         Private Function Verify(entry As Entry) As Boolean
+            If entry.Kind = "stream-reserve" AndAlso Not completedStreams.Contains(entry.RelativePath) Then Return False
+            Return VerifyPayload(entry)
+        End Function
+        Private Function VerifyPayload(entry As Entry) As Boolean
             Dim destination = Path.Combine(root, entry.RelativePath)
             CheckPath(destination)
             If Not File.Exists(destination) OrElse New FileInfo(destination).Length <> entry.Length Then Return False

@@ -4,6 +4,7 @@ Imports System.Text
 Imports System.Security.Cryptography
 Imports System.Text.Json
 Imports FO4_Base_Library
+Imports BSA_BA2_Library_DLL.BethesdaArchive.Core
 Imports FO4_NPC_Manager.ExperimentalTransformation
 
 Module Program
@@ -106,6 +107,68 @@ Module Program
         End Using
         Return New LocalizationTable With {.Plugin = pluginName, .Kind = "strings", .FilePath = filePath, .Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(filePath)))}
     End Function
+    Private Sub ArchiveLocalizationChecks(root As String, data As String, loose As LocalizationTable)
+        Dim entries As New List(Of VirtualEntry)
+        Dim manifest As New LocalizationProfile With {.Language = "spanish"}
+        Dim archive = Path.Combine(root, "Fixture - Main.ba2")
+        For Each kind In {"strings", "dlstrings", "ilstrings"}
+            Dim payload = Text("Texto BA2 " & kind & " Ángela")
+            Using memory As New MemoryStream(), writer As New BinaryWriter(memory, Encoding.UTF8, True)
+                writer.Write(1UI) : writer.Write(CUInt(payload.Length + If(kind = "strings", 0, 4)))
+                writer.Write(42UI) : writer.Write(0UI)
+                If kind <> "strings" Then writer.Write(CUInt(payload.Length))
+                writer.Write(payload) : writer.Flush()
+                Dim bytes = memory.ToArray()
+                entries.Add(New VirtualEntry With {.Directory = "Strings", .FileName = "Fixture_spanish." & kind, .Data = bytes})
+                manifest.Tables.Add(New LocalizationTable With {.Plugin = "Fixture.esm", .Kind = kind, .FilePath = archive,
+                    .ResourcePath = "Strings\Fixture_spanish." & kind, .ResourceSha256 = Convert.ToHexString(SHA256.HashData(bytes))})
+            End Using
+        Next
+        entries.Add(New VirtualEntry With {.Directory = "Strings", .FileName = "Fixture_english.strings", .Data = File.ReadAllBytes(loose.FilePath)})
+        File.WriteAllBytes(archive, Ba2WriterGNRL.Build(entries, New Ba2WriterGNRL.Options With {.Version = 1UI}))
+        Dim archiveHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive)))
+        For Each table In manifest.Tables
+            table.Sha256 = archiveHash
+        Next
+        Dim oldDictionary = FilesDictionary_class.Dictionary
+        Dim oldCache = FilesDictionary_class.CacheDirectory
+        Using scope = LocalizedExportScope.Open(manifest, {"Fallout4.esm", "Fixture.esm"})
+            Dim pm As New PluginManager()
+            pm.LoadAllPlugins(data, {"Fallout4.esm", "Fixture.esm"})
+            For Each kind In {LocalizedStringTableKind.Strings, LocalizedStringTableKind.DLStrings, LocalizedStringTableKind.ILStrings}
+                Dim value As String = ""
+                Check(pm.TryResolveLocalizedString("Fixture.esm", 42UI, kind, value) AndAlso value.StartsWith("Texto BA2", StringComparison.Ordinal), "original resolver reads selected BA2 " & kind.ToString())
+                Check(Not pm.TryResolveLocalizedString("Fixture.esm", 99UI, kind, value), "missing ID in BA2 " & kind.ToString() & " cannot fallback")
+            Next
+            scope.VerifyUnchanged()
+        End Using
+        Check(ReferenceEquals(oldDictionary, FilesDictionary_class.Dictionary) AndAlso FilesDictionary_class.CacheDirectory = oldCache, "BA2 resource and cache context restored")
+        Dim patch = WriteRecordOnlyPatch(data, {"Fallout4.esm", "Fixture.esm"}, "Fixture.esm", &H800UI, Path.Combine(root, "localized-ba2"), AgeEvidence.Adult, "controlled adult", manifest)
+        Dim reopened As New PluginReader() : reopened.Load(patch)
+        Check(Encoding.UTF8.GetString(reopened.Records.Values.Single().GetSubrecord("FULL").Value.Data).StartsWith("Texto BA2 strings", StringComparison.Ordinal), "BA2 selected language exports and reopens through original ESP writer")
+        Check(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive))) = archiveHash AndAlso Not Directory.Exists(Path.Combine(root, "Strings")), "BA2 unchanged and never extracted to disk")
+        manifest.Tables.Add(loose)
+        Reject(Sub() LocalizedExportScope.Open(manifest, {"Fallout4.esm", "Fixture.esm"}), "loose and BA2 competing winners require explicit unambiguous selection")
+        manifest.Tables.Remove(loose)
+        Dim first = manifest.Tables(0)
+        first.ResourceSha256 = New String("0"c, 64)
+        Reject(Sub() LocalizedExportScope.Open(manifest, {"Fallout4.esm", "Fixture.esm"}), "BA2 entry content hash mismatch rejected")
+        first.ResourceSha256 = Convert.ToHexString(SHA256.HashData(entries(0).Data))
+        first.ResourcePath = "Strings\Fixture_english.strings"
+        Reject(Sub() LocalizedExportScope.Open(manifest, {"Fallout4.esm", "Fixture.esm"}), "BA2 language cannot fallback to English")
+        first.ResourcePath = "Strings\Fixture_spanish.strings"
+        first.Sha256 = New String("0"c, 64)
+        Reject(Sub() LocalizedExportScope.Open(manifest, {"Fallout4.esm", "Fixture.esm"}), "archive integrity mismatch rejected before extraction")
+        Check(ReferenceEquals(oldDictionary, FilesDictionary_class.Dictionary), "failed BA2 operations restore original context")
+        entries(0).Data = New Byte(15) {}
+        File.WriteAllBytes(archive, Ba2WriterGNRL.Build(entries, New Ba2WriterGNRL.Options With {.Version = 1UI}))
+        For Each table In manifest.Tables
+            table.Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive)))
+        Next
+        first.ResourceSha256 = Convert.ToHexString(SHA256.HashData(entries(0).Data))
+        Reject(Sub() WriteRecordOnlyPatch(data, {"Fallout4.esm", "Fixture.esm"}, "Fixture.esm", &H800UI, Path.Combine(root, "ba2-invalid-table"), AgeEvidence.Adult, "controlled adult", manifest), "hash-valid BA2 with missing string data cannot emit ESP")
+        Check(Not Directory.Exists(Path.Combine(root, "ba2-invalid-table")), "invalid BA2 localization leaves no export directory")
+    End Sub
     Private Sub LocalizationChecks(root As String)
         Dim data = Directory.CreateDirectory(Path.Combine(root, "localized-inputs")).FullName
         Fixture(data, genericHuman:=True)
@@ -133,6 +196,7 @@ Module Program
         Dim spanish = StringTable(Path.Combine(tables, "Fixture_spanish.strings"), "Adulta de prueba Ángela")
         Dim english = StringTable(Path.Combine(tables, "Fixture_english.strings"), "Wrong fallback language")
         Dim localization As New LocalizationProfile With {.Language = "spanish", .Tables = New List(Of LocalizationTable) From {spanish}}
+        ArchiveLocalizationChecks(root, data, spanish)
         Dim beforeDictionary = FilesDictionary_class.Dictionary
         Dim beforeRoot = FilesDictionary_class.FO4Path
         Dim patch As String
